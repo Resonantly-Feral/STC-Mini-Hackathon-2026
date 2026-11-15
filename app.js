@@ -38,6 +38,7 @@
   }
   function button(text, fn, cls, id) { return el('button', { type:'button', text:text, class:cls || 'btn-primary', id:id || '', onclick:fn }); }
   function show(nodes, screen) {
+    setWater(0);
     app.className = screen === 'plan' ? 'plan-screen' : screen === 'results' ? 'results-screen' : screen === 'drill' ? 'drill-screen' : '';
     app.textContent = '';
     nodes.forEach(function (n) { if (n) app.appendChild(n); });
@@ -45,6 +46,11 @@
     window.scrollTo(0,0);
     var heading = app.querySelector('h1');
     if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
+  }
+  function setWater(gaps) {
+    var water=document.getElementById('water');
+    water.style.height=(Math.max(0,Math.min(Q.length,gaps))*9)+'vh';
+    water.classList.toggle('empty',gaps===0);
   }
   function status(text) {
     return el('div',{class:'statusbar'},[
@@ -148,13 +154,17 @@
   function drill() {
     var error=el('p',{class:'error',role:'alert'}), fields=[];
     var count=el('p',{class:'progress',role:'status'});
+    var waterNote=el('p',{class:'small muted water-note',role:'status'});
     function refresh() {
       var complete=fields.filter(function(f){return f.answer.assessment && f.why.value.trim();}).length;
       count.textContent=complete+' of 5 reflections ready'+(demoMode ? ' · prefilled examples, editable' : '');
+      var gaps=fields.filter(function(f){return f.answer.assessment && DryRun.scoreAnswer(f.answer).result==='GAP';}).length;
+      setWater(gaps);
+      waterNote.textContent='Rehearsal water: '+gaps+' of 5 topics with gaps so far. Illustration only—not flood depth or a safety score.';
     }
     var cards=Q.map(function(q,i){
       var answer=plan[i];
-      var why=el('textarea',{id:q.id+'-reflection',rows:'3',maxlength:'600',placeholder:'Why would it work? What still needs checking?'});
+      var why=el('textarea',{id:q.id+'-reflection',rows:'2',maxlength:'600',placeholder:'Why? What needs checking?'});
       why.value=answer.reason;
       why.addEventListener('input',function(){answer.reason=why.value;save();refresh();});
       var radios=[];
@@ -169,21 +179,22 @@
       return el('section',{class:'panel rehearsal-card','aria-label':q.topic+' scenario'},[
         el('h2',{text:q.emoji+' '+q.topic}),
         el('div',{class:'scenario-summary'},[
-          el('p',{class:'mono-cap',text:'Imagine this disruption'}),
-          el('h3',{text:q.card}),
+          el('h3',{text:q.card})
+        ]),
+        el('details',{class:'scenario-guidance plan-detail'},[
+          el('summary',{text:'Your plan & backup'}),
           el('p',{class:'small muted',text:'First choice: '+answer.primary}),
           el('p',{class:'small',text:'Backup: '+(answer.backup||'None recorded')})
         ]),
-        el('p',{class:'small reflection-prompt',text:q.prompt}),
-        el('details',{class:'scenario-guidance'},[el('summary',{text:'What to consider'}),el('p',{class:'small muted',text:q.check})]),
-        choices,el('label',{for:q.id+'-reflection',text:demoMode ? 'Example reflection (editable)' : 'Your reflection'}),why
+        el('details',{class:'scenario-guidance'},[el('summary',{text:'What to consider'}),el('p',{class:'small',text:q.prompt}),el('p',{class:'small muted',text:q.check})]),
+        choices,el('label',{for:q.id+'-reflection',text:demoMode ? 'Example reflection' : 'Your reflection'}),why
       ]);
     });
     refresh();
     show([
       status('All five scenarios'),el('h1',{text:demoMode ? 'Explore the sample rehearsal' : 'Rehearse your flood plan'}),
-      el('p',{class:'lead',text:'Compare all five disruptions. Choose a response and explain your thinking for each, then review them together.'}),
-      el('p',{class:'small muted',text:demoMode ? 'Fictional answers and example reflections are prefilled for demonstration. Edit them to explore the outcomes. They do not assess your own preparedness.' : 'Your first choices and backups are carried over from your plan. Your judgments start blank—Dry Run cannot decide whether a backup will work.'}),
+      el('p',{class:'lead',text:'Imagine each disruption. Would your backup work? Choose, explain, then review.'}),
+      el('p',{class:'small muted',text:demoMode ? 'Fictional sample · edit the example reflections to explore. Your personal plan stays separate.' : 'Your plan is under each card. These are your judgments; backups are not independently verified.'}),
       count,el('div',{class:'rehearsal-grid'},cards),error,
       el('div',{class:'plan-actions'},[
         button('Review all five reflections',function(){
@@ -195,8 +206,9 @@
           last={outcomes:run.outcomes.slice(),date:new Date().toISOString()};save();results();
         },'btn-primary','review'),
         button('Edit plan',function(){planScreen();},'btn-ghost','edit-plan')
-      ]), note()
+      ]), waterNote, note()
     ],'drill');
+    refresh();
   }
   function results() {
     var scores=DryRun.scorePlan(plan), counts=DryRun.summary(plan);
@@ -218,12 +230,13 @@
       el('div',{class:'review-counts'},Object.keys(labels).map(function(key){return el('section',{class:'panel outcome '+key.toLowerCase()},[
         el('div',{class:'tile-num',text:String(counts[key])}),el('p',{text:labels[key]})
       ]);})),
-      note(),compare
+      el('p',{class:'small muted water-note',text:'Rehearsal water: '+counts.GAP+' of 5 topics with gaps. Illustration only—not flood depth or a safety score.'}),note(),compare
     ].concat([el('div',{class:'results-grid'},panels)]).concat([
       button('Patch and replay',function(){planScreen();},'btn-primary','patch'),
       button('Print my plan',function(){window.print();},'btn-ghost btn-demo','print'),
       sources(),printSheet()
     ]), 'results');
+    setWater(counts.GAP);
   }
   function printSheet() {
     return el('section',{id:'sheet'},[
