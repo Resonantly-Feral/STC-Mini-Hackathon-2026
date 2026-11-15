@@ -46,6 +46,9 @@ This is a warning only and does not change scoring.
 - Patch and replay: player edits backups, deck reshuffles, drill runs
   again. Show the previous meter level next to the new one.
 - A "Fill example" button loads a sample kedai plan for demos.
+- "Print my plan" on the results screen prints a one-page paper copy
+  (question, first choice, backup; a blank line to fill by hand where
+  there is no backup). The plan must not live only on the phone.
 
 ## Look and feel
 A colourful browser card game, not a form and not a dashboard.
@@ -67,6 +70,6 @@ A colourful browser card game, not a form and not a dashboard.
 
 ## NOT building
 - Maps, weather or flood alerts, SOS, donations, chatbots
-- Accounts, sharing, multi-user, PDF export
+- Accounts, sharing, multi-user
 - Points, badges, leaderboards, characters, sound
 - Any scoring logic beyond the rule above

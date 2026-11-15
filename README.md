@@ -17,6 +17,8 @@ Built for the STC Mini Hackathon 2026 (theme: Disaster Recovery).
 3. **Results.** Where it broke, what held, how many bets you called, and a
    concentration warning if one answer carries three or more parts of the plan.
 4. **Patch and replay.** Add a backup, run again, and compare before and after.
+5. **Print my plan.** One page for the fridge or the shop wall, so the plan
+   does not live only on a phone that may be dead when it matters.
 
 ## Scoring rule
 

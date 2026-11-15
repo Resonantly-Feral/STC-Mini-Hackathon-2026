@@ -235,6 +235,41 @@
     ]);
   }
 
+
+  /* ---------- Paper copy ---------- */
+
+  function today() {
+    var d = new Date();
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    return two(d.getDate()) + '/' + two(d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+
+  /* One page for the fridge or the shop wall. Only visible when printing. */
+  function printSheet() {
+    var rows = QUESTIONS.map(function (q, i) {
+      var answer = state.plan[i];
+      var holds = DryRun.scoreAnswer(answer).result === 'HOLDS';
+      return el('tr', {}, [
+        el('th', { scope: 'row', text: q.question }),
+        el('td', { text: answer.primary }),
+        el('td', { class: holds ? '' : 'gap', text: holds ? answer.backup : 'No backup yet: ____________________' })
+      ]);
+    });
+    return el('section', { id: 'sheet', 'aria-hidden': 'true' }, [
+      el('h1', { text: 'Our plan if disaster strikes' }),
+      el('p', { text: 'Tested with Dry Run on ' + today() + '. Keep this on paper, where everyone can find it.' }),
+      el('table', {}, [
+        el('thead', {}, [el('tr', {}, [
+          el('th', { scope: 'col', text: 'Question' }),
+          el('th', { scope: 'col', text: 'First choice' }),
+          el('th', { scope: 'col', text: 'If that fails' })
+        ])]),
+        el('tbody', {}, rows)
+      ]),
+      el('p', { class: 'sheet-note', text: 'Fill any blank line by hand, then run the drill again.' })
+    ]);
+  }
+
   /* ---------- Screen 3: results ---------- */
 
   function finishDrill() {
@@ -317,9 +352,12 @@
         el('ul', { class: 'list', id: 'holds' }, held.map(item))
       ]) : null,
       el('button', { class: 'btn-primary', id: 'patch', text: 'Patch and replay', onclick: planScreen }),
+      el('button', { class: 'btn-ghost', id: 'print', style: 'width:100%;margin-top:12px', text: 'Print my plan',
+        onclick: function () { window.print(); } }),
       el('p', { class: 'small muted', text: 'The meter labels are game feedback, not a risk rating. ' +
         'A backup only counts here if you named one that is different from the primary. ' +
-        'Whether it would really work is for you to check.' })
+        'Whether it would really work is for you to check.' }),
+      printSheet()
     ]));
   }
 
