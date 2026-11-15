@@ -1,0 +1,79 @@
+1
+00:00:00,009 --> 00:00:05,009
+STC MINI HACKATHON 2026 · DISASTER RECOVERY · DRY RUN · Find gaps in your flood plan before you need it. · A short flood-plan rehearsal for a household, a kedai or a community.
+
+2
+00:00:05,732 --> 00:00:10,232
+Five topics: warnings, evacuation, people, communication and essentials.
+
+3
+00:00:10,240 --> 00:00:14,429
+For this demo, a fictional sample plan. Your own plan stays separate.
+
+4
+00:00:14,440 --> 00:00:19,551
+Each card is a disruption. Would your backup still work? Choose, then explain why.
+
+5
+00:00:19,554 --> 00:00:24,457
+No backup for transport: the plan has a gap, and the water rises.
+
+6
+00:00:24,460 --> 00:00:28,345
+Now the shared failure.
+
+7
+00:00:28,347 --> 00:00:33,347
+First choice WhatsApp, backup Telegram. Two apps, one mobile network.
+
+8
+00:00:33,349 --> 00:00:40,913
+If the network goes down, both go down. That is not really a backup.
+
+9
+00:00:40,915 --> 00:00:46,317
+The review: gaps found, things to check, and backups named.
+
+10
+00:00:46,322 --> 00:00:51,226
+Every topic gets its own water level and plain-language next step.
+
+11
+00:00:51,228 --> 00:00:56,611
+Communication: gap found. Patch it.
+
+12
+00:00:56,613 --> 00:01:01,818
+Patch: a fallback that does not need the phone network at all.
+
+13
+00:01:01,820 --> 00:01:06,055
+Then rehearse again.
+
+14
+00:01:06,057 --> 00:01:18,879
+The changed answer is flagged: reassess this scenario.
+
+15
+00:01:18,880 --> 00:01:21,788
+Reassessed.
+
+16
+00:01:21,789 --> 00:01:27,290
+Before and after: Communication went from gap found to backup named.
+
+17
+00:01:27,292 --> 00:01:32,396
+The other gaps stay visible. It is a rehearsal, not a safety rating.
+
+18
+00:01:32,398 --> 00:01:37,803
+For real warnings and shelters: official Malaysian sources, linked, never copied.
+
+19
+00:01:37,805 --> 00:01:41,805
+Print it for the fridge. It works offline, with no login, on any phone.
+
+20
+00:01:41,808 --> 00:01:47,808
+DRY RUN · A warning tells you danger is coming. · Dry Run shows which part of your plan fails when it arrives. · stc-mini-hackathon-2026.vercel.app
