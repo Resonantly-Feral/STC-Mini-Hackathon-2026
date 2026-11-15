@@ -1,30 +1,45 @@
 # Dry Run
 
-A short flood-plan rehearsal: find gaps, check assumptions and plan your next steps.
+A household flood-plan rehearsal: find gaps in backup arrangements before an emergency.
 
-## Journey
-Enter a first choice and optional backup for each topic. Five disruption scenarios appear together in a responsive horizontal workspace. Each asks whether the backup could still work (yes/no/unsure) and requires a written explanation. Review each topic, patch answers, rehearse again and compare recorded outcomes. Retain the responsive horizontal question grid.
+**[Try the public prototype](https://stc-mini-hackathon-2026.vercel.app/)** · **[Pitch deck](docs/Dry_Run_Revised.pdf)**
 
-## Outcomes
-Missing first choice, missing backup, identical backup or self-reported failure: Gap found. A distinct backup with an uncertain/missing assessment or missing explanation: Needs checking. An explained yes with a distinct backup: Backup named, explicitly self-reported and unverified. Never infer safety from different strings. No survival predictions, correctness bets, resilience ratings or score-driven flood animation.
+## Quick demo
+1. Choose **Try a sample drill**. Fictional plans and reflections are prefilled.
+2. Use **Demo shortcut: two apps, one network** to see why WhatsApp and Telegram can share a failure point.
+3. Choose **Review all five reflections** to see gaps, arrangements needing checking, and named backups.
+4. Choose **Patch communication** or **Patch evacuation**, edit the backup, and start the rehearsal again.
+5. Reassess the changed topic. Its old judgment and explanation are cleared. Unchanged reflections remain available. Review the before-and-after result and water level.
 
-## Persistence
-Store flood answers by stable topic ID in dryrun.flood.v2. Leave dryrun.v1 untouched and never relabel its business answers. Changes invalidate prior reflections. Each replay requests fresh judgments. Store prior completed outcomes for comparison.
+## What it does
+Five topics cover warnings, evacuation, people needing assistance, communication, and essential supplies. Users name a first choice and optional backup, consider a disruption, then record whether the backup could work and why. They can patch and replay or print their notes.
 
-## Presentation and limits
-Keep the navy/cyan identity, readable forms, keyboard access and reduced-motion support. The town is a neutral decorative illustration only. Sources are outbound links, not live data. Print first choices, backups, reflections and source links. Explicitly distinguish user judgments from verification. Follow authority instructions; never suggest entering floodwater or assume a PPS is open.
+Each result has its own animated water column: high for **Gap found**, medium for **Needs checking**, and low for **Backup named**. These illustrate recorded outcomes, not flood depth, measured preparedness, or verified safety. Reduced-motion preferences are respected.
 
-## Technical constraints
-Plain HTML/CSS/JS, no dependencies or backend, no AI at runtime, ordinary script tags and file:// support. Service worker caches static assets over HTTPS; bump cache version with each deployment. Pure logic tests in tests.html/tests.js.
+## Entry modes and privacy
+- **Write your flood plan** starts blank; **Continue saved plan** restores personal answers from this browser.
+- **Try a sample drill** and **Switch to sample plan** open an isolated sample. Sample edits never overwrite the personal plan.
+- Personal answers are stored locally by topic ID. Editing a first choice or backup invalidates its previous reflection.
+- The app has no backend, accounts, or AI processing at runtime.
 
 ## Run and test
-Open index.html to run. Open tests.html for the outcome and persistence tests. No install or build step.
+Open `index.html` in a browser. Open `tests.html` for 20 outcome and persistence tests. No install or build step is required.
 
-## Guidance used
+Built with plain HTML, CSS and JavaScript; versioned in GitHub and hosted on Vercel. An HTTPS service worker caches static files for offline use. After a deployment, an already-open tab may need a refresh to use the updated app.
+
+## How outcomes work
+Missing first choices, missing or identical backups, and self-reported failure produce **Gap found**. A distinct backup with uncertainty or an incomplete reflection produces **Needs checking**. A distinct backup with an explained yes produces **Backup named**, which remains self-reported and unverified. The app does not evaluate the meaning or safety of free-text answers.
+
+## Credits
+The prototype was developed with **Claude and OpenAI Codex**, which generated and revised the code. The creator directed the concept, tested the experience, and provided design and behavior feedback. AI assistance was used during development, not to assess users at runtime.
+
+Preparation wording is an educational synthesis informed by official Malaysian guidance:
 - [MKN flood preparation](https://www.mkn.gov.my/web/ms/2026/11/04/persediaan-kecemasan-banjir/)
 - [MKN / KKM additional support needs](https://www.mkn.gov.my/web/ms/2025/11/30/persiapan-sebelum-banjir-bagi-golongan-berisiko-tinggi/)
 
-Wording is an educational synthesis, not an official or exhaustive checklist. Original business-drill screenshots in the repository are historical and do not represent this version.
+The app links to JPS Public InfoBanjir, METMalaysia, NADMA and JKM. These are external sources, not live integrations or endorsements.
 
-## Separate entry modes
-Write your flood plan starts blank. Continue saved plan explicitly restores personal answers. Trying a sample or filling sample answers enters an isolated, clearly labelled sample session with editable example reflections; sample changes and results never overwrite the personal plan. Personal judgments start blank on each rehearsal. Starting a blank form without editing does not replace an existing saved plan. Fill sample answers sits beside Start the rehearsal. All five scenarios are reviewed together.
+## Scope
+This is a rehearsal and discussion tool, not a complete emergency plan, live warning system, or safety certification. Follow current official instructions and confirm routes, destinations and support arrangements. Never enter floodwater to retrieve supplies.
+
+The numbered PNG screenshots in the repository document an earlier business-drill prototype and do not represent the current interface; use the live app for the latest version.
