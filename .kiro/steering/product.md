@@ -51,15 +51,32 @@ This is a warning only and does not change scoring.
   there is no backup). The plan must not live only on the phone.
 
 ## Look and feel
-A colourful browser card game, not a form and not a dashboard.
-- Dark navy background. One large card centred on screen.
-- Card flips with a CSS animation to reveal HOLDS (green) or
-  BREAKS (red).
+A colourful browser card game dressed as an emergency operations
+command centre. Not a form and not a dashboard of real data.
+- Deep navy and charcoal background with a faint grid and glow.
+  Glass panels with glowing borders.
+- Colour roles: cyan = interactive, amber = warnings and incoming
+  events, red = failures, green = a backup taking over.
+- Home screen: DRY RUN title, tagline, a five-segment resilience ring
+  (empty until the first drill, then the last drill's result), and a
+  START SIMULATION button.
+- Plan entry is a checklist: numbered cards, a progress strip, and
+  visually distinct primary and backup fields. The progress strip only
+  shows what is filled in. It never scores before the drill.
+- One large event card centred on screen. It arrives with an alert
+  animation and flips with CSS to HOLDS (green) or BREAKS (red). The
+  back shows the primary knocked out and what takes over, if anything.
 - The water is a blue layer that rises from the bottom of the whole
-  screen behind the card, with a smooth CSS transition.
-- Big rounded buttons, bold type, one emoji per card as its icon.
-- CSS animations only. No images, no sprites, no canvas, no
-  characters, no sound.
+  screen behind the card, with a smooth CSS transition. A five-cell
+  bar shows the same level.
+- Results are a dashboard: failures, correct bets, meter, warnings,
+  what broke, what held. After a replay, the before-and-after panel
+  with two animated gauges is the centrepiece.
+- Big buttons, bold type, one emoji per card as its icon.
+- CSS animations only, switched off under prefers-reduced-motion.
+  No images, no sprites, no canvas, no characters, no sound.
+- Every number on screen comes from the player's own plan and drill.
+  No invented statistics and no safety claims.
 
 ## Rules
 - No backend. No login. No live AI calls at runtime.

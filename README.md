@@ -13,7 +13,8 @@ Built for the STC Mini Hackathon 2026 (theme: Disaster Recovery).
 
 ## How it works
 
-1. **Plan.** Five questions, each with a primary and an optional backup.
+1. **Plan.** From the home screen, start the simulation and fill in a
+   five-item checklist: a primary and an optional backup for each question.
 2. **Drill.** Five cards, shuffled, one per answer. Each card knocks out the
    primary you typed. You bet HOLDS or BREAKS before the card flips.
 3. **Results.** Where it broke, what held, how many bets you called, and a
