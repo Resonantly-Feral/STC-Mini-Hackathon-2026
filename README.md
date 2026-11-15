@@ -1,5 +1,7 @@
 # Dry Run
 
+**Play it live: https://stc-mini-hackathon-2026.vercel.app**
+
 **Find the failure before the disaster does.**
 
 A drill for a small disaster plan. A kedai owner, household, or community
