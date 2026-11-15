@@ -524,3 +524,21 @@ textarea:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
 .hero-title { filter: none; }
 @media (max-width: 380px) { .review-counts { gap: 6px; } .review-counts .panel { padding: 9px; } }
 @media print { #sheet { font-size: 11pt; } #sheet th, #sheet td { padding: 6pt; } #sheet ul { font-size: 9pt; } }
+
+/* Review all five topics together instead of scrolling through a narrow report. */
+main.results-screen { max-width: 1600px; }
+.results-screen > .lead { max-width: 800px; }
+.results-screen > .review-counts { max-width: 760px; }
+.results-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; margin: 20px 0 24px; }
+.results-grid > .panel { min-width: 0; margin: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 18px; }
+.results-grid h2 { font-size: 21px; }
+.results-grid p { font-size: 16px; }
+.results-grid .chip { font-size: 11px; }
+.results-grid button { margin-top: auto; width: 100%; padding: 12px; font-size: 16px; }
+.results-screen > .btn-primary, .results-screen > .btn-demo { display: block; max-width: 620px; margin-left: auto; margin-right: auto; }
+@media (min-width: 640px) {
+  main.results-screen { padding: 24px 24px 72px; }
+  .results-grid, .results-screen .sources .list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (min-width: 960px) { .results-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (min-width: 1280px) { .results-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } }

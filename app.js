@@ -27,7 +27,7 @@
   }
   function button(text, fn, cls, id) { return el('button', { type:'button', text:text, class:cls || 'btn-primary', id:id || '', onclick:fn }); }
   function show(nodes, screen) {
-    app.className = screen === 'plan' ? 'plan-screen' : '';
+    app.className = screen === 'plan' ? 'plan-screen' : screen === 'results' ? 'results-screen' : '';
     app.textContent = '';
     nodes.forEach(function (n) { if (n) app.appendChild(n); });
     if (storageFailed) app.appendChild(el('p',{class:'error',role:'status',text:'This browser could not save your plan. Keep this tab open and print or copy your answers before leaving.'}));
@@ -67,7 +67,7 @@
           plan = DRY_RUN_EXAMPLE.map(function(a){return {primary:a.primary,backup:a.backup,assessment:'',reason:''};});
           last = null; save(); startDrill();
         },'btn-ghost btn-demo','demo'),
-        el('p',{class:'small muted',text:'The sample is fictional and includes gaps. It replaces the flood plan saved on this device.'})
+        el('p',{class:'small muted',text:'Same rehearsal, with fictional answers already filled in. The sample includes gaps and replaces the flood plan saved on this device.'})
       ]),
       el('ol',{class:'steps'},[
         ['01','Plan','Five practical topics. Name your first choice and a fallback.'],
@@ -191,11 +191,11 @@
         el('div',{class:'tile-num',text:String(counts[key])}),el('p',{text:labels[key]})
       ]);})),
       note(),compare
-    ].concat(panels).concat([
+    ].concat([el('div',{class:'results-grid'},panels)]).concat([
       button('Patch and replay',function(){planScreen();},'btn-primary','patch'),
       button('Print my plan',function(){window.print();},'btn-ghost btn-demo','print'),
       sources(),printSheet()
-    ]));
+    ]), 'results');
   }
   function printSheet() {
     return el('section',{id:'sheet'},[
