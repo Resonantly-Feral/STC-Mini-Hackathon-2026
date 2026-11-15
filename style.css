@@ -535,6 +535,22 @@ main.results-screen { max-width: 1600px; }
 .results-grid p { font-size: 16px; }
 .results-grid .chip { font-size: 11px; }
 .results-grid button { margin-top: auto; width: 100%; padding: 12px; font-size: 16px; }
+/* Independent water columns illustrate each topic's recorded outcome. */
+.results-grid .topic-water { position: relative; isolation: isolate; overflow: hidden; min-height: 440px; background: #0b1428; }
+.topic-water.gap { --topic-level: 76%; }
+.topic-water.check { --topic-level: 44%; }
+.topic-water.backup { --topic-level: 12%; }
+.topic-water-fill { position: absolute; z-index: -1; pointer-events: none; inset: auto 0 0; height: var(--topic-level); background: linear-gradient(180deg,#155575 0%,#10334f 100%); animation: topic-rise 1.2s ease-out both; }
+.topic-wave { position: absolute; inset: -30px 0 auto; height: 40px; }
+.topic-wave::before, .topic-wave::after { content: ''; position: absolute; inset: 0 -240px; background-repeat: repeat-x; background-size: 240px 40px; animation: topic-drift 7s linear infinite; }
+.topic-wave::before { top: -5px; opacity: .45; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='40' viewBox='0 0 240 40'%3E%3Cpath fill='%2346cfe5' d='M0 16C40 0 80 0 120 16S200 32 240 16V40H0Z'/%3E%3C/svg%3E"); animation-duration: 11s; animation-direction: reverse; }
+.topic-wave::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='40' viewBox='0 0 240 40'%3E%3Cpath fill='%23155575' d='M0 16C40 0 80 0 120 16S200 32 240 16V40H0Z'/%3E%3C/svg%3E"); }
+.topic-water .chip { background: #0b1428; }
+.topic-water p { color: #e9f1ff; }
+.topic-water button { background: #0b1428; }
+@keyframes topic-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes topic-drift { to { transform: translateX(240px); } }
+@media (prefers-reduced-motion: reduce) { .topic-water-fill, .topic-wave::before, .topic-wave::after { animation: none; } }
 .results-screen > .btn-primary, .results-screen > .btn-demo { display: block; max-width: 620px; margin-left: auto; margin-right: auto; }
 @media (min-width: 640px) {
   main.results-screen { padding: 24px 24px 72px; }
