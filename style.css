@@ -469,3 +469,30 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   #sheet ul { margin: 0 0 8pt; padding-left: 16pt; font-size: 11pt; }
   #sheet li { overflow-wrap: anywhere; }
 }
+
+/* Plan workspace: compare all five dependencies across a desktop screen. */
+main.plan-screen { max-width: 1600px; }
+.plan-screen > .lead { max-width: 760px; }
+.plan-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin: 20px 0 0; }
+.plan-grid .q-card { min-width: 0; margin: 0; display: flex; flex-direction: column; }
+.plan-grid .q-head { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+.plan-grid .q-text { flex-basis: 100%; margin-top: 4px; }
+.plan-grid .q-status { margin-top: auto; padding-top: 16px; flex-wrap: wrap; }
+.plan-grid .chip { letter-spacing: .5px; }
+.plan-grid input { min-width: 0; }
+.plan-screen > .btn-primary, .plan-screen > .row { max-width: 620px; margin-left: auto; margin-right: auto; }
+.plan-screen > .btn-primary { display: block; }
+.plan-screen > .error { text-align: center; }
+@media (min-width: 640px) {
+  main.plan-screen { padding: 24px 24px 72px; }
+  .plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 960px) {
+  .plan-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1280px) {
+  .plan-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .plan-grid .q-card { padding: 16px; }
+  .plan-grid .q-head { font-size: 18px; }
+  .plan-grid input { padding: 12px 10px; font-size: 16px; }
+}

@@ -41,7 +41,8 @@
     return node;
   }
 
-  function show(nodes) {
+  function show(nodes, screen) {
+    app.classList.toggle('plan-screen', screen === 'plan');
     app.textContent = '';
     nodes.forEach(function (node) { if (node) app.appendChild(node); });
     window.scrollTo(0, 0);
@@ -265,15 +266,16 @@
       isReplay
         ? el('p', { class: 'lead', text: 'Patch your plan. Add or change a backup where it broke, then run the drill again.' })
         : el('p', { class: 'lead', text: 'Write down your plan. Then we break things, one card at a time, and see what holds.' }),
-      progress
-    ].concat(blocks).concat([
+      progress,
+      el('div', { class: 'plan-grid' }, blocks)
+    ].concat([
       error,
       el('button', { class: 'btn-primary', id: 'start', text: isReplay ? 'Run the drill again' : 'Run the drill', onclick: start }),
       el('div', { class: 'row', style: 'margin-top:12px' }, [
         el('button', { class: 'btn-ghost', id: 'example', text: 'Fill example', onclick: fillExample }),
         isReplay ? el('button', { class: 'btn-ghost', id: 'reset', text: 'Start over', onclick: startOver }) : null
       ])
-    ]));
+    ]), 'plan');
 
     if (typeof focusIndex === 'number' && inputs[focusIndex]) {
       inputs[focusIndex].block.scrollIntoView({ block: 'center' });
