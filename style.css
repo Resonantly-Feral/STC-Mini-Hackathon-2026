@@ -542,3 +542,28 @@ main.results-screen { max-width: 1600px; }
 }
 @media (min-width: 960px) { .results-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media (min-width: 1280px) { .results-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } }
+
+/* One shared workspace for the five rehearsal scenarios. */
+main.drill-screen { max-width: 1600px; }
+.drill-screen > .lead { max-width: 900px; }
+.plan-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; margin: 22px 0; }
+.plan-actions > button { flex: 1 1 210px; width: auto; }
+.plan-actions > .btn-primary { flex-grow: 2; }
+.rehearsal-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; margin-top: 18px; }
+.rehearsal-card { margin: 0; min-width: 0; display: flex; flex-direction: column; padding: 16px; box-shadow: none; overflow-wrap: anywhere; }
+.rehearsal-card h2 { font-size: 20px; }
+.rehearsal-card h3 { font-size: 18px; line-height: 1.35; margin: 8px 0 12px; }
+.scenario-summary { border-top: 2px solid var(--amber); padding-top: 12px; }
+.rehearsal-card .reflection-choices { margin: auto 0 16px; padding: 10px 0; border: 0; }
+.rehearsal-card legend { font-size: 16px; padding: 0; }
+.rehearsal-card .choice { font-size: 15px; padding: 8px 0; gap: 8px; }
+.scenario-guidance { margin: 0 0 18px; font-size: 15px; }
+.scenario-guidance summary { cursor: pointer; color: var(--cyan); min-height: 32px; }
+.scenario-guidance p { margin: 8px 0; }
+.rehearsal-card textarea { min-height: 120px; }
+@media (min-width: 640px) {
+ main.drill-screen { padding: 24px 24px 72px; }
+ .rehearsal-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (min-width: 960px) { .rehearsal-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (min-width: 1280px) { .rehearsal-grid { grid-template-columns: repeat(5,minmax(0,1fr)); } }

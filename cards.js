@@ -121,3 +121,12 @@ DRY_RUN_SOURCES = DRY_RUN_SOURCES.concat([
     "url": "https://www.mkn.gov.my/web/ms/2025/11/30/persiapan-sebelum-banjir-bagi-golongan-berisiko-tinggi/"
   }
 ]);
+
+/* Example judgments only: never prefill a personal assessment. */
+var DRY_RUN_REFLECTIONS = [
+  { assessment: 'yes', reason: 'The battery radio does not use our phone connection. We still need to check batteries, reception and official broadcasts.' },
+  { assessment: 'no', reason: 'We have no alternative transport arrangement recorded. We need to arrange and confirm one.' },
+  { assessment: 'unsure', reason: 'The neighbour has agreed to help, but we have not confirmed accessible transport.' },
+  { assessment: 'no', reason: 'Both WhatsApp and Telegram need a working network. We need an agreed offline fallback.' },
+  { assessment: 'unsure', reason: 'The supplies are stored separately, but access and suitability still need checking.' }
+];

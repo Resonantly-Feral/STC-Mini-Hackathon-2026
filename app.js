@@ -7,6 +7,15 @@
   plan = DryRun.cleanPlan(state.answers, Q);
   var last = state.last && Array.isArray(state.last.outcomes) && state.last.outcomes.length === Q.length &&
     state.last.outcomes.every(function (s) { return ['GAP','CHECK','BACKUP'].indexOf(s) >= 0; }) ? state.last : null;
+  var demoMode = false;
+  var savedPlan = JSON.parse(JSON.stringify(plan)), savedLast = last;
+  function freshPlan() { return DryRun.cleanPlan(null,Q); }
+  function beginPersonal() { demoMode=false; plan=freshPlan(); last=null; planScreen(); }
+  function continuePersonal() { demoMode=false; plan=JSON.parse(JSON.stringify(savedPlan)); last=savedLast; planScreen(); }
+  function beginSample(openPlan) {
+    demoMode=true; last=null; plan=DRY_RUN_EXAMPLE.map(function(a){return {primary:a.primary,backup:a.backup,assessment:'',reason:''};});
+    if(openPlan) planScreen(); else startDrill();
+  }
   var labels = { GAP: 'Gap found', CHECK: 'Needs checking', BACKUP: 'Backup named' };
   function el(tag, attrs, children) {
     var n = document.createElement(tag);
@@ -20,6 +29,8 @@
     return n;
   }
   function save() {
+    if (demoMode) return;
+    savedPlan=JSON.parse(JSON.stringify(plan)); savedLast=last;
     var answers = {};
     Q.forEach(function (q,i) { answers[q.id] = plan[i]; });
     try { localStorage.setItem(KEY, JSON.stringify({ answers: answers, last: last })); }
@@ -27,7 +38,7 @@
   }
   function button(text, fn, cls, id) { return el('button', { type:'button', text:text, class:cls || 'btn-primary', id:id || '', onclick:fn }); }
   function show(nodes, screen) {
-    app.className = screen === 'plan' ? 'plan-screen' : screen === 'results' ? 'results-screen' : '';
+    app.className = screen === 'plan' ? 'plan-screen' : screen === 'results' ? 'results-screen' : screen === 'drill' ? 'drill-screen' : '';
     app.textContent = '';
     nodes.forEach(function (n) { if (n) app.appendChild(n); });
     if (storageFailed) app.appendChild(el('p',{class:'error',role:'status',text:'This browser could not save your plan. Keep this tab open and print or copy your answers before leaving.'}));
@@ -37,7 +48,7 @@
   }
   function status(text) {
     return el('div',{class:'statusbar'},[
-      button('DRY RUN',home,'brand','home'), el('span',{class:'status-label',text:text})
+      button('DRY RUN',home,'brand','home'), el('span',{class:'status-label',text:(demoMode ? 'Sample · ' : '')+text})
     ]);
   }
   function note() { return el('p',{class:'small muted',text:'A short rehearsal, not a complete emergency plan or a safety rating. Follow current instructions from local authorities. No live warnings or shelter status are shown.'}); }
@@ -62,12 +73,11 @@
         el('p',{class:'tagline',text:'Find gaps in your flood plan before you need it.'}),
         town.el,
         el('p',{class:'lead',text:'Warnings. Evacuation. People. Communication. Essentials.'}),
-        button('Write your flood plan',function(){planScreen();},'btn-primary','begin'),
-        button('Try a sample drill',function(){
-          plan = DRY_RUN_EXAMPLE.map(function(a){return {primary:a.primary,backup:a.backup,assessment:'',reason:''};});
-          last = null; save(); startDrill();
-        },'btn-ghost btn-demo','demo'),
-        el('p',{class:'small muted',text:'Same rehearsal, with fictional answers already filled in. The sample includes gaps and replaces the flood plan saved on this device.'})
+        button('Write your flood plan',beginPersonal,'btn-primary','begin'),
+        savedPlan.some(function(a){return a.primary || a.backup;})
+          ? button('Continue saved plan',continuePersonal,'btn-ghost btn-demo','continue') : null,
+        button('Try a sample drill',function(){beginSample(false);},'btn-ghost btn-demo','demo'),
+        el('p',{class:'small muted',text:'Start blank, continue your saved plan, or explore a separate sample with example reflections. The sample never overwrites your plan.'})
       ]),
       el('ol',{class:'steps'},[
         ['01','Plan','Five practical topics. Name your first choice and a fallback.'],
@@ -80,8 +90,9 @@
   function planScreen(focusIndex) {
     var pairs = [], error = el('p',{class:'error',role:'alert'}), count = el('div',{class:'progress',role:'status'});
     function read() {
+      var before=JSON.stringify(plan);
       pairs.forEach(function(p,i){plan[i] = DryRun.revise(plan[i],p.primary.value,p.backup.value);});
-      save();
+      if(JSON.stringify(plan)!==before) save();
     }
     function refresh() {
       count.textContent = pairs.filter(function(p){return p.primary.value.trim();}).length + ' of 5 first choices entered · ' +
@@ -104,25 +115,27 @@
     show([
       status('Flood plan'),el('h1',{text:last ? 'Patch your flood plan' : 'Your flood plan'}),
       el('p',{class:'lead',text:'Be specific about people, places and arrangements. If you do not have a plan for a topic, write “not planned yet” so you can explore the gap.'}),
+      el('p',{class:'small muted',text:demoMode ? 'Sample mode: fictional answers. Changes here are for practice and are not saved to your personal plan.' : 'Your plan starts blank. Edits save on this device; use Continue saved plan to return to them.'}),
       note(),count,el('div',{class:'plan-grid'},cards),error,
+      el('div',{class:'plan-actions'},[
       button('Start the rehearsal',function(){
         read(); var missing = pairs.findIndex(function(p){return !p.primary.value.trim();});
         if(missing >= 0) {error.textContent='Enter a first choice for each topic, or write “not planned yet”.';pairs[missing].primary.focus();return;}
         startDrill();
       },'btn-primary','start'),
-      el('div',{class:'row',style:'margin-top:12px'},[
-        button('Fill sample answers',function(){DRY_RUN_EXAMPLE.forEach(function(a,i){pairs[i].primary.value=a.primary;pairs[i].backup.value=a.backup;});read();refresh();error.textContent='';},'btn-ghost','example'),
+        button('Fill sample answers',function(){beginSample(true);},'btn-ghost','example'),
         button('Back to home',function(){read();home();},'btn-ghost')
       ])
     ],'plan');
     if(typeof focusIndex === 'number' && pairs[focusIndex]) pairs[focusIndex].backup.focus();
   }
   function startDrill() {
-    var order = Q.map(function(q,i){return i;});
-    for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),tmp=order[i];order[i]=order[j];order[j]=tmp;}
-    run = {order:order,step:0,previous:last,outcomes:[]};
-    // Every run asks for a fresh assessment; the prior report remains for comparison.
-    plan.forEach(function(a){a.assessment='';a.reason='';}); save(); drill();
+    run = {previous:last,outcomes:[]};
+    plan.forEach(function(a,i){
+      a.assessment=demoMode ? DRY_RUN_REFLECTIONS[i].assessment : '';
+      a.reason=demoMode ? DRY_RUN_REFLECTIONS[i].reason : '';
+    });
+    save(); drill();
   }
   function explain(answer, score) {
     if(score.reason==='no-primary') return 'No first choice has been recorded.';
@@ -133,42 +146,57 @@
     return 'You named a backup and explained why you think it could work. This is your assessment, not independent verification.';
   }
   function drill() {
-    var i=run.order[run.step], q=Q[i], a=plan[i];
-    var why=el('textarea',{id:'reflection',rows:'3',maxlength:'600',placeholder:'Explain what works, what fails, or what you still need to check.'});
-    var error=el('p',{class:'error',role:'alert'}), choice='';
-    var choices=el('fieldset',{class:'reflection-choices'},[
-      el('legend',{text:'Would your backup still work in this situation?'})
-    ].concat([['yes','I think it could'],['no','No, there is a gap'],['unsure','I am not sure']].map(function(item){
-      return el('label',{class:'choice'},[el('input',{type:'radio',name:'assessment',value:item[0],onchange:function(){choice=item[0];}}),el('span',{text:item[1]})]);
-    })));
+    var error=el('p',{class:'error',role:'alert'}), fields=[];
+    var count=el('p',{class:'progress',role:'status'});
+    function refresh() {
+      var complete=fields.filter(function(f){return f.answer.assessment && f.why.value.trim();}).length;
+      count.textContent=complete+' of 5 reflections ready'+(demoMode ? ' · prefilled examples, editable' : '');
+    }
+    var cards=Q.map(function(q,i){
+      var answer=plan[i];
+      var why=el('textarea',{id:q.id+'-reflection',rows:'3',maxlength:'600',placeholder:'Why would it work? What still needs checking?'});
+      why.value=answer.reason;
+      why.addEventListener('input',function(){answer.reason=why.value;save();refresh();});
+      var radios=[];
+      var choices=el('fieldset',{class:'reflection-choices'},[
+        el('legend',{text:'Would your backup still work?'})
+      ].concat([['yes','I think it could'],['no','No, there is a gap'],['unsure','I am not sure']].map(function(item){
+        var radio=el('input',{type:'radio',name:'assessment-'+q.id,value:item[0],onchange:function(){answer.assessment=item[0];save();refresh();}});
+        radio.checked=answer.assessment===item[0]; radios.push(radio);
+        return el('label',{class:'choice'},[radio,el('span',{text:item[1]})]);
+      })));
+      fields.push({answer:answer,why:why,radios:radios});
+      return el('section',{class:'panel rehearsal-card','aria-label':q.topic+' scenario'},[
+        el('h2',{text:q.emoji+' '+q.topic}),
+        el('div',{class:'scenario-summary'},[
+          el('p',{class:'mono-cap',text:'Imagine this disruption'}),
+          el('h3',{text:q.card}),
+          el('p',{class:'small muted',text:'First choice: '+answer.primary}),
+          el('p',{class:'small',text:'Backup: '+(answer.backup||'None recorded')})
+        ]),
+        el('p',{class:'small reflection-prompt',text:q.prompt}),
+        el('details',{class:'scenario-guidance'},[el('summary',{text:'What to consider'}),el('p',{class:'small muted',text:q.check})]),
+        choices,el('label',{for:q.id+'-reflection',text:demoMode ? 'Example reflection (editable)' : 'Your reflection'}),why
+      ]);
+    });
+    refresh();
     show([
-      status('Rehearsal '+(run.step+1)+' / 5'),el('h1',{text:q.emoji+' '+q.topic}),
-      el('section',{class:'panel scenario'},[
-        el('p',{class:'eyebrow',text:'Imagine this disruption'}),
-        el('h2',{text:q.card}),
-        el('p',{class:'small muted',text:'Your first choice: '+a.primary}),
-        el('p',{text:'Your backup: '+(a.backup || 'None recorded')})
-      ]),
-      el('p',{text:q.prompt}),el('p',{class:'small muted',text:q.check}),
-      choices,el('label',{for:'reflection',text:'Why? What needs checking?'}),why,
-      el('p',{class:'small muted',text:'This records your judgment. Dry Run cannot verify routes, supplies, helpers or whether a backup is independent.'}),
-      error,
-      button('Record my reflection',function(){
-        if(!choice || !why.value.trim()){error.textContent='Choose an answer and add a short explanation before continuing.'; if(!why.value.trim()) why.focus();return;}
-        a.assessment=choice;a.reason=why.value.trim();save();
-        var score=DryRun.scoreAnswer(a);run.outcomes[i]=score.result;
-        show([
-          status('Reflection recorded'),el('h1',{text:labels[score.result]}),
-          el('section',{class:'panel outcome '+score.result.toLowerCase()},[
-            el('h2',{text:q.topic}),el('p',{text:explain(a,score)}),
-            el('p',{text:'Your note: '+a.reason})
-          ]),
-          button(run.step===Q.length-1?'See your review':'Next scenario',function(){
-            run.step++;if(run.step===Q.length){last={outcomes:run.outcomes.slice(),date:new Date().toISOString()};save();results();}else drill();
-          },'btn-primary','next'),note()
-        ]);
-      },'btn-primary','reflect')
-    ]);
+      status('All five scenarios'),el('h1',{text:demoMode ? 'Explore the sample rehearsal' : 'Rehearse your flood plan'}),
+      el('p',{class:'lead',text:'Compare all five disruptions. Choose a response and explain your thinking for each, then review them together.'}),
+      el('p',{class:'small muted',text:demoMode ? 'Fictional answers and example reflections are prefilled for demonstration. Edit them to explore the outcomes. They do not assess your own preparedness.' : 'Your first choices and backups are carried over from your plan. Your judgments start blank—Dry Run cannot decide whether a backup will work.'}),
+      count,el('div',{class:'rehearsal-grid'},cards),error,
+      el('div',{class:'plan-actions'},[
+        button('Review all five reflections',function(){
+          var missing=fields.findIndex(function(f){return !f.answer.assessment || !f.why.value.trim();});
+          if(missing>=0){error.textContent='Choose a response and add an explanation for '+Q[missing].topic.toLowerCase()+'.';
+            if(!fields[missing].answer.assessment) fields[missing].radios[0].focus();else fields[missing].why.focus();return;}
+          plan.forEach(function(a,i){a.reason=fields[i].why.value.trim();});
+          run.outcomes=DryRun.scorePlan(plan).map(function(s){return s.result;});
+          last={outcomes:run.outcomes.slice(),date:new Date().toISOString()};save();results();
+        },'btn-primary','review'),
+        button('Edit plan',function(){planScreen();},'btn-ghost','edit-plan')
+      ]), note()
+    ],'drill');
   }
   function results() {
     var scores=DryRun.scorePlan(plan), counts=DryRun.summary(plan);
@@ -185,7 +213,7 @@
       el('ul',{class:'list'},Q.map(function(q,i){return el('li',{text:q.topic+': '+labels[run.previous.outcomes[i]]+' → '+labels[scores[i].result]});}))
     ]) : null;
     show([
-      status('Rehearsal review'),el('h1',{text:'Your next steps'}),
+      status('Rehearsal review'),el('h1',{text:demoMode ? 'Sample next steps' : 'Your next steps'}),
       el('p',{class:'lead',text:'Check the assumptions. Agree arrangements with the people involved. Then rehearse again.'}),
       el('div',{class:'review-counts'},Object.keys(labels).map(function(key){return el('section',{class:'panel outcome '+key.toLowerCase()},[
         el('div',{class:'tile-num',text:String(counts[key])}),el('p',{text:labels[key]})
@@ -199,7 +227,7 @@
   }
   function printSheet() {
     return el('section',{id:'sheet'},[
-      el('h1',{text:'Our flood rehearsal notes'}),
+      el('h1',{text:demoMode ? 'Sample flood rehearsal notes' : 'Our flood rehearsal notes'}),
       el('p',{text:'Recorded '+new Date().toLocaleDateString()+'. A discussion aid, not a complete plan or safety certification.'}),
       el('table',{},[
         el('thead',{},[el('tr',{},['Topic','First choice','Backup and follow-up'].map(function(t){return el('th',{scope:'col',text:t});}))]),
