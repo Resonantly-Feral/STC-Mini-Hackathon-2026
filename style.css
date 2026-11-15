@@ -1,0 +1,147 @@
+:root {
+  --navy: #0b1530;
+  --panel: #142248;
+  --panel-2: #1c2f61;
+  --ink: #f2f6ff;
+  --muted: #a9b8dc;
+  --green: #37d68a;
+  --yellow: #ffd04a;
+  --red: #ff5f6d;
+  --blue: #2f8cff;
+  --accent: #7c5cff;
+  --radius: 22px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--navy);
+  color: var(--ink);
+  font: 18px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Water rises from the bottom of the whole screen, behind everything. */
+#water {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: 0;
+  background: linear-gradient(180deg, rgba(47,140,255,.85), rgba(20,70,190,.95));
+  transition: height 1.2s cubic-bezier(.2,.8,.2,1);
+  z-index: 0;
+}
+#water .wave {
+  position: absolute; left: 0; right: 0; top: -14px; height: 28px;
+  background: radial-gradient(circle at 14px -4px, transparent 14px, rgba(47,140,255,.85) 15px) repeat-x;
+  background-size: 28px 28px;
+  animation: drift 3s linear infinite;
+}
+#water.empty .wave { display: none; }
+@keyframes drift { to { background-position-x: 28px; } }
+
+main {
+  position: relative; z-index: 1;
+  max-width: 620px; margin: 0 auto; padding: 24px 16px 64px;
+}
+h1 { font-size: 44px; line-height: 1.05; margin: 12px 0 4px; letter-spacing: -1px; }
+h2 { font-size: 26px; margin: 0 0 8px; }
+.tagline { color: var(--muted); font-size: 20px; margin: 0 0 20px; }
+.muted { color: var(--muted); }
+.small { font-size: 15px; }
+
+.panel {
+  background: var(--panel); border-radius: var(--radius);
+  padding: 18px; margin: 14px 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.q-head { display: flex; gap: 10px; align-items: center; font-weight: 800; font-size: 19px; }
+.q-emoji { font-size: 28px; }
+label { display: block; font-size: 14px; font-weight: 700; color: var(--muted); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .6px; }
+input[type=text] {
+  width: 100%; padding: 14px; font: inherit; color: var(--ink);
+  background: var(--panel-2); border: 2px solid transparent; border-radius: 14px;
+}
+input[type=text]::placeholder { color: #7f90b8; }
+input[type=text]:focus { outline: none; border-color: var(--accent); }
+.panel.broke { outline: 3px solid var(--red); }
+.badge {
+  display: inline-block; margin-left: auto; padding: 2px 10px; border-radius: 999px;
+  font-size: 13px; font-weight: 800; background: var(--red); color: #2b0508;
+}
+.error { color: var(--red); font-weight: 700; min-height: 1.5em; }
+
+button {
+  font: inherit; font-weight: 800; border: 0; cursor: pointer;
+  border-radius: 999px; padding: 16px 22px; color: #0b1530;
+  transition: transform .12s ease, filter .12s ease;
+}
+button:hover { filter: brightness(1.08); }
+button:active { transform: scale(.97); }
+button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; font-size: 20px; }
+.btn-ghost { background: transparent; color: var(--ink); border: 2px solid var(--panel-2); }
+.btn-holds { background: var(--green); }
+.btn-breaks { background: var(--red); }
+.row { display: flex; gap: 12px; flex-wrap: wrap; }
+.row > button { flex: 1 1 160px; }
+
+/* Meter chip */
+.meter {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 16px;
+  background: var(--panel);
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.green .dot, .dot.green { background: var(--green); }
+.yellow .dot, .dot.yellow { background: var(--yellow); }
+.red .dot, .dot.red { background: var(--red); }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* The card */
+.card { perspective: 1200px; margin: 18px 0; }
+.card-inner {
+  display: grid; transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.2,.8,.2,1);
+}
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.face {
+  grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: 28px; padding: 28px 22px; min-height: 300px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  box-shadow: 0 18px 44px rgba(0,0,0,.45);
+}
+.front { background: linear-gradient(160deg, #26398f, #5b34c9); }
+.back { transform: rotateY(180deg); }
+.back.holds { background: linear-gradient(160deg, #0f7d4c, #37d68a); color: #04220f; }
+.back.breaks { background: linear-gradient(160deg, #a3122a, #ff5f6d); color: #fff; }
+.card-emoji { font-size: 64px; line-height: 1; }
+.card-topic { font-size: 15px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: .85; margin-top: 8px; }
+.card-text { font-size: 26px; font-weight: 800; line-height: 1.25; margin: 14px 0 0; overflow-wrap: anywhere; }
+.verdict { font-size: 52px; font-weight: 900; letter-spacing: 2px; }
+.why { font-size: 20px; font-weight: 700; margin-top: 8px; overflow-wrap: anywhere; }
+.call { margin-top: 14px; font-size: 17px; font-weight: 800; padding: 6px 14px; border-radius: 999px; background: rgba(0,0,0,.25); }
+
+/* Results */
+.warn { background: #4a3a05; border: 2px solid var(--yellow); }
+.warn strong { color: var(--yellow); }
+.list { list-style: none; margin: 8px 0 0; padding: 0; }
+.list li { padding: 12px 0; border-top: 1px solid var(--panel-2); overflow-wrap: anywhere; }
+.list li:first-child { border-top: 0; }
+.tag { font-weight: 900; font-size: 14px; padding: 2px 10px; border-radius: 999px; margin-right: 8px; }
+.tag.breaks { background: var(--red); color: #2b0508; }
+.tag.holds { background: var(--green); color: #04220f; }
+.compare { display: flex; gap: 18px; justify-content: center; align-items: flex-end; margin-top: 10px; }
+.gauge { text-align: center; font-weight: 800; }
+.tube {
+  width: 84px; height: 150px; border-radius: 16px; background: var(--panel-2);
+  position: relative; overflow: hidden; margin: 0 auto 6px;
+}
+.tube .fill {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+  background: linear-gradient(180deg, #5aa6ff, #1c55d6);
+  transition: height 1s cubic-bezier(.2,.8,.2,1) .2s;
+}
+.arrow { font-size: 30px; padding-bottom: 60px; }
+.big { font-size: 34px; font-weight: 900; }
+
+@media (prefers-reduced-motion: reduce) {
+  #water, .card-inner, .tube .fill, button { transition: none; }
+  #water .wave { animation: none; }
+}
