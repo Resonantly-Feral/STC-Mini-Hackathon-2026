@@ -2,7 +2,7 @@
 
 A household flood-plan rehearsal: find gaps in backup arrangements before an emergency.
 
-**[Try the public prototype](https://stc-mini-hackathon-2026.vercel.app/)** · **[Pitch deck](docs/Dry_Run_Revised.pdf)**
+**[Try the public prototype](https://stc-mini-hackathon-2026.vercel.app/)** · **[Pitch deck](docs/Dry_Run_Revised.pdf)** · **[Demo video](https://youtu.be/gMJILarhchA)**
 
 ## Quick demo
 1. Choose **Try a sample drill**. Fictional plans and reflections are prefilled.
