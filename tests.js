@@ -1,76 +1,33 @@
-/* Plain assertions for scoring.js. Open tests.html to see PASS or FAIL. */
+/* Tests for conservative outcome classification and saved-plan handling. */
 var DryRunTests = (function () {
-  'use strict';
   var results = [];
-
-  function check(name, actual, expected) {
-    var a = JSON.stringify(actual);
-    var e = JSON.stringify(expected);
-    results.push({ name: name, pass: a === e, actual: a, expected: e });
-  }
-
-  function plan(rows) {
-    return rows.map(function (r) { return { primary: r[0], backup: r[1] }; });
-  }
-
-  // Scoring rule
-  check('no backup breaks', DryRun.scoreAnswer({ primary: 'Ali', backup: '' }).result, 'BREAKS');
-  check('no backup reason', DryRun.scoreAnswer({ primary: 'Ali', backup: '' }).reason, 'no-backup');
-  check('missing backup field breaks', DryRun.scoreAnswer({ primary: 'Ali' }).result, 'BREAKS');
-  check('whitespace-only backup breaks', DryRun.scoreAnswer({ primary: 'Ali', backup: '   ' }).result, 'BREAKS');
-  check('distinct backup holds', DryRun.scoreAnswer({ primary: 'Ali', backup: 'Mei' }).result, 'HOLDS');
-
-  // Same-as-primary case
-  check('backup same as primary breaks', DryRun.scoreAnswer({ primary: 'Ali', backup: 'Ali' }).result, 'BREAKS');
-  check('same-as-primary reason', DryRun.scoreAnswer({ primary: 'Ali', backup: 'Ali' }).reason, 'same-as-primary');
-  check('same ignoring case and spaces breaks', DryRun.scoreAnswer({ primary: ' Ali ', backup: 'aLI' }).result, 'BREAKS');
-  check('different name that contains primary holds', DryRun.scoreAnswer({ primary: 'Ali', backup: "Ali's phone" }).result, 'HOLDS');
-
-  // Counting
-  var example = plan([['Ali', ''], ['Drawer', 'Drawer'], ['Ali', 'Notebook'], ['Ali', ''], ['WhatsApp', 'Surau']]);
-  check('counts breaks across a plan', DryRun.countBreaks(example), 3);
-  check('all distinct backups gives zero breaks',
-    DryRun.countBreaks(plan([['A', 'B'], ['C', 'D'], ['E', 'F'], ['G', 'H'], ['I', 'J']])), 0);
-  check('empty plan answers all break',
-    DryRun.countBreaks(plan([['A', ''], ['B', ''], ['C', ''], ['D', ''], ['E', '']])), 5);
-
-  // Concentration warning
-  check('same primary 3 times triggers warning', DryRun.concentration(example), [{ answer: 'Ali', n: 3 }]);
-  check('same primary 2 times does not trigger',
-    DryRun.concentration(plan([['Ali', ''], ['Ali', ''], ['C', ''], ['D', ''], ['E', '']])), []);
-  check('concentration ignores case and spaces',
-    DryRun.concentration(plan([['Ali', ''], [' ali', ''], ['ALI ', ''], ['D', ''], ['E', '']])), [{ answer: 'Ali', n: 3 }]);
-  check('concentration ignores empty primaries',
-    DryRun.concentration(plan([['', ''], ['', ''], ['', ''], ['D', ''], ['E', '']])), []);
-  check('warning does not change scoring: concentrated plan with distinct backups has zero breaks',
-    DryRun.countBreaks(plan([['Ali', 'Mei'], ['Ali', 'Raj'], ['Ali', 'Siti'], ['Ali', 'Tan'], ['X', 'Y']])), 0);
-  check('warning still fires on that plan',
-    DryRun.concentration(plan([['Ali', 'Mei'], ['Ali', 'Raj'], ['Ali', 'Siti'], ['Ali', 'Tan'], ['X', 'Y']])), [{ answer: 'Ali', n: 4 }]);
-
-  // Meter labels
-  check('0 breaks is green', DryRun.meterLabel(0), { level: 'green', text: 'Holding strong' });
-  check('1 break is yellow', DryRun.meterLabel(1).level, 'yellow');
-  check('2 breaks is yellow', DryRun.meterLabel(2).level, 'yellow');
-  check('3 breaks is red', DryRun.meterLabel(3), { level: 'red', text: 'Critical weaknesses' });
-  check('5 breaks is red', DryRun.meterLabel(5).level, 'red');
-
+  function check(name, actual, expected) { results.push({name:name,pass:JSON.stringify(actual)===JSON.stringify(expected),actual:JSON.stringify(actual),expected:JSON.stringify(expected)}); }
+  function answer(extra) { return Object.assign({primary:'WhatsApp',backup:'Telegram',assessment:'',reason:''},extra); }
+  check('missing answer is a gap',DryRun.scoreAnswer().result,'GAP');
+  check('missing primary is a gap',DryRun.scoreAnswer(answer({primary:''})).reason,'no-primary');
+  check('missing backup is a gap',DryRun.scoreAnswer(answer({backup:'  '})).reason,'no-backup');
+  check('same backup ignores case and spaces',DryRun.scoreAnswer(answer({backup:' WHATSAPP '})).reason,'same-as-primary');
+  check('different messaging apps are not automatically validated',DryRun.scoreAnswer(answer()).result,'CHECK');
+  check('yes without an explanation needs checking',DryRun.scoreAnswer(answer({assessment:'yes',reason:'  '})).result,'CHECK');
+  check('uncertain answer needs checking even with explanation',DryRun.scoreAnswer(answer({assessment:'unsure',reason:'Both need internet'})).result,'CHECK');
+  check('self-reported failure is a gap',DryRun.scoreAnswer(answer({assessment:'no',reason:'Both need internet'})).reason,'self-reported-gap');
+  check('explained yes only records a named backup',DryRun.scoreAnswer(answer({assessment:'yes',reason:'We think it works'})),{result:'BACKUP',reason:'self-reported-backup'});
+  check('yes cannot override missing backup',DryRun.scoreAnswer(answer({backup:'',assessment:'yes',reason:'It will work'})).result,'GAP');
+  check('yes cannot override identical backup',DryRun.scoreAnswer(answer({backup:'WhatsApp',assessment:'yes',reason:'It will work'})).result,'GAP');
+  check('invalid assessment needs checking',DryRun.scoreAnswer(answer({assessment:'safe',reason:'verified'})).result,'CHECK');
+  check('summary distinguishes all outcomes',DryRun.summary([answer({backup:''}),answer(),answer({assessment:'yes',reason:'Named'})]),{GAP:1,CHECK:1,BACKUP:1});
+  var previous=answer({assessment:'yes',reason:'Agreed arrangement'});
+  check('editing backup invalidates old reflection',DryRun.revise(previous,'WhatsApp','Radio').assessment,'');
+  check('editing primary clears old explanation',DryRun.revise(previous,'Phone','Telegram').reason,'');
+  check('unchanged answers retain reflection',DryRun.revise(previous,' WhatsApp ','Telegram').reason,'Agreed arrangement');
+  check('legacy positional answers are not mapped to flood topics',DryRun.cleanPlan([previous],[{id:'warnings'}]),[{primary:'',backup:'',assessment:'',reason:''}]);
+  check('saved flood topic IDs restore correctly',DryRun.cleanPlan({warnings:previous},[{id:'warnings'}])[0],previous);
+  check('malformed saved fields are discarded',DryRun.cleanPlan({warnings:{primary:23,backup:{},assessment:'safe',reason:null}},[{id:'warnings'}]),[{primary:'',backup:'',assessment:'',reason:''}]);
+  check('oversized saved text is bounded',DryRun.cleanPlan({warnings:{primary:'x'.repeat(900)}},[{id:'warnings'}])[0].primary.length,600);
   return results;
 })();
-
-if (typeof document !== 'undefined') {
-  (function () {
-    var list = document.getElementById('results');
-    var failed = 0;
-    DryRunTests.forEach(function (t) {
-      var li = document.createElement('li');
-      li.className = t.pass ? 'pass' : 'fail';
-      li.textContent = (t.pass ? 'PASS  ' : 'FAIL  ') + t.name +
-        (t.pass ? '' : '  (expected ' + t.expected + ', got ' + t.actual + ')');
-      list.appendChild(li);
-      if (!t.pass) failed += 1;
-    });
-    document.getElementById('summary').textContent =
-      (DryRunTests.length - failed) + ' of ' + DryRunTests.length + ' passed';
-  })();
+if(typeof document !== 'undefined') {
+  DryRunTests.forEach(function(t){var li=document.createElement('li');li.className=t.pass?'pass':'fail';li.textContent=(t.pass?'PASS ':'FAIL ')+t.name+(t.pass?'':' expected '+t.expected+' got '+t.actual);document.getElementById('results').appendChild(li);});
+  document.getElementById('summary').textContent=DryRunTests.filter(function(t){return t.pass;}).length+' of '+DryRunTests.length+' passed';
 }
-if (typeof module !== 'undefined' && module.exports) module.exports = DryRunTests;
+if(typeof module !== 'undefined' && module.exports) module.exports=DryRunTests;

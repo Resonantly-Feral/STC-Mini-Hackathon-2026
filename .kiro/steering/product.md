@@ -1,114 +1,18 @@
-# Dry Run
-Find the failure before the disaster does.
+# Dry Run: flood preparedness rehearsal
 
-## What it is
-A drill for a small disaster plan. A kedai owner, household, or
-community committee enters their plan, the app attacks it one failure
-at a time, shows where it breaks, and lets them fix it and run again.
+A browser-only discussion aid for five topics: warnings, evacuation, people, communication and essentials. Questions are an educational synthesis of Malaysian guidance, not an official checklist or a complete emergency plan.
 
-## The plan: 5 questions
-Each answer has a PRIMARY and an optional BACKUP (free text).
-1. Who holds the keys / access?
-2. Where are the important documents kept?
-3. Where are the emergency contacts stored?
-4. Who knows the suppliers, customers, and money owed?
-5. How does everyone reach each other?
+## Journey
+Enter a first choice and optional backup for each topic. Five shuffled disruption scenarios ask whether the backup could still work (yes/no/unsure) and require a written explanation. Review each topic, patch answers, rehearse again and compare recorded outcomes. Retain the responsive horizontal question grid.
 
-## The deck: 5 cards, one per question
-Each card inserts the player's own PRIMARY answer into its text.
-1. "{primary} is stuck outside the area and cannot get back."
-2. "{primary} has been destroyed."
-3. "{primary} is lost or dead."
-4. "{primary} cannot be reached for a week."
-5. "{primary} is down for everyone."
+## Outcomes
+Missing first choice, missing backup, identical backup or self-reported failure: Gap found. A distinct backup with an uncertain/missing assessment or missing explanation: Needs checking. An explained yes with a distinct backup: Backup named, explicitly self-reported and unverified. Never infer safety from different strings. No survival predictions, correctness bets, resilience ratings or score-driven flood animation.
 
-## Scoring rule (exact, do not extend)
-Compare answers after trimming spaces and ignoring letter case.
-- No backup = BREAKS
-- Backup same as primary = BREAKS
-- Backup different from primary = HOLDS
+## Persistence
+Store flood answers by stable topic ID in dryrun.flood.v2. Leave dryrun.v1 untouched and never relabel its business answers. Changes invalidate prior reflections. Each replay requests fresh judgments. Store prior completed outcomes for comparison.
 
-## Concentration warning
-If the same answer is the PRIMARY for 3 or more questions, show at the
-top of the results: "You rely on {answer} for {n} parts of your plan.
-Check whether your backups are truly independent."
-This is a warning only and does not change scoring.
+## Presentation and limits
+Keep the navy/cyan identity, readable forms, keyboard access and reduced-motion support. The town is a neutral decorative illustration only. Sources are outbound links, not live data. Print first choices, backups, reflections and source links. Explicitly distinguish user judgments from verification. Follow authority instructions; never suggest entering floodwater or assume a PPS is open.
 
-## Game layer
-- Cards are dealt one at a time in shuffled order.
-- Before each reveal the player bets HOLDS or BREAKS. Track correct bets.
-- Resilience meter: water rises one step per BREAK, 5 steps total.
-  0 breaks: "Holding strong" (green). 1-2: "Vulnerabilities found"
-  (yellow). 3+: "Critical weaknesses" (red).
-  These labels are game feedback, not a risk rating. Say so on screen.
-- Results: breaks listed, concentration warning if triggered, and
-  "You called X of 5 correctly".
-- Patch and replay: player edits backups, deck reshuffles, drill runs
-  again. Show the previous meter level next to the new one.
-- A "Fill example" button loads a sample kedai plan for demos.
-- "Print my plan" on the results screen prints a one-page paper copy
-  (question, first choice, backup; a blank line to fill by hand where
-  there is no backup). The plan must not live only on the phone.
-- Official sources: the results screen and the printed sheet list four
-  official Malaysian sources (Public InfoBanjir, METMalaysia, NADMA
-  Portal Bencana, JKM InfoBencana) as plain links, each labelled with
-  the agency that runs it, plus "In an emergency, call 999". The app
-  never fetches from them and never shows warnings, flood levels or
-  shelter status itself, and says so next to the links.
-
-## Look and feel
-A playable disaster-recovery simulation dressed as an emergency
-operations command centre. Not a form and not a dashboard of real data.
-- Deep navy and charcoal background with a faint grid and glow.
-  Glass panels with glowing borders.
-- Colour roles: cyan = interactive, amber = warnings, incoming events
-  and edited-but-not-retested answers, red = failures, green = a
-  backup taking over.
-- The town: a small isometric neighbourhood of five buildings, one per
-  question (house = keys, records office = documents, community hall =
-  contacts, kedai = who knows the business, signal tower = reaching
-  each other). It is the resilience indicator on every screen. A
-  building turns red and sinks when its card BREAKS and gets a green
-  tick when it HOLDS; water rises in the town one step per break.
-  town.js draws it in code as inline SVG and only displays the states
-  it is given. It never scores.
-- Home screen: DRY RUN title, tagline, the town (untested until the
-  first drill, then the last drill's result), START SIMULATION, and
-  TRY DEMO PLAN, which loads the sample kedai plan and goes straight
-  into the drill.
-- Plan entry is a checklist: numbered cards, a progress strip, and
-  visually distinct primary and backup fields. The progress strip only
-  shows what is filled in. It never scores before the drill. When
-  patching, a changed answer is marked amber "Edited, run the drill to
-  retest".
-- Drill: rain and a dark sky over the town, the building under attack
-  is targeted in amber. One large event card arrives with an alert
-  animation and flips with CSS to HOLDS (green) or BREAKS (red). The
-  back shows the primary knocked out and what takes over, if anything.
-- The water is also a blue layer that rises from the bottom of the
-  whole screen behind the card, with a smooth CSS transition.
-- Results are a dashboard: failures, correct bets, the town, warnings,
-  what broke, what held. Tapping a flooded building opens the plan at
-  that question's backup field. After a replay, the before-and-after
-  panel with last run's town above this run's town is the centrepiece.
-- Big buttons, bold type, one emoji per card as its icon.
-- Animations are CSS only and switch off under prefers-reduced-motion.
-  No image files, no canvas, no characters, no sound.
-- Every number on screen comes from the player's own plan and drill.
-  No invented statistics and no safety claims.
-
-## Rules
-- No backend. No login. No live AI calls at runtime.
-- All data in localStorage.
-- No network calls after first load. All logic runs in the browser.
-- When deployed over https, a refresh works offline (service worker
-  caches the static files). No install prompt.
-- Scoring is a pure function in scoring.js, tested in tests.html.
-- Mobile-first, large text, plain language.
-
-## NOT building
-- Maps, weather or flood alerts, SOS, donations, chatbots. No live
-  data of any kind: official sources are links only.
-- Accounts, sharing, multi-user
-- Points, badges, leaderboards, coins, characters, sound
-- Any scoring logic beyond the rule above
+## Technical constraints
+Plain HTML/CSS/JS, no dependencies or backend, no AI at runtime, ordinary script tags and file:// support. Service worker caches static assets over HTTPS; bump cache version with each deployment. Pure logic tests in tests.html/tests.js.

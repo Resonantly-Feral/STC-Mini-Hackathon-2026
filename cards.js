@@ -1,63 +1,85 @@
-/* The five plan questions and the failure card that attacks each one. */
+/* Flood rehearsal prompts; educational synthesis, not an official checklist. */
 var DRY_RUN_QUESTIONS = [
   {
-    id: 'keys',
-    emoji: '🔑',
-    topic: 'Keys and access',
-    question: 'Who holds the keys / access?',
-    primaryHint: 'e.g. Ali',
-    backupHint: 'Who else has a set?',
-    card: '{primary} is stuck outside the area and cannot get back.'
+    "id": "warnings",
+    "emoji": "📢",
+    "topic": "Warnings",
+    "question": "How will you receive official flood warnings and evacuation instructions?",
+    "primaryHint": "e.g. METMalaysia updates on my phone",
+    "backupHint": "Another way to receive official instructions",
+    "card": "Your usual warning channel is unavailable.",
+    "prompt": "If your phone or internet fails, how will you still receive official instructions?",
+    "check": "Choose another way to receive official updates. Follow evacuation instructions from local authorities."
   },
   {
-    id: 'documents',
-    emoji: '📄',
-    topic: 'Important documents',
-    question: 'Where are the important documents kept?',
-    primaryHint: 'e.g. Shop drawer',
-    backupHint: 'Where is the copy?',
-    card: '{primary} has been destroyed.'
+    "id": "evacuation",
+    "emoji": "🚐",
+    "topic": "Evacuation",
+    "question": "Where will you go, and how will you get there?",
+    "primaryHint": "Destination, route and transport",
+    "backupHint": "An alternative route or transport arrangement",
+    "card": "Your planned route or transport is unavailable.",
+    "prompt": "Is the alternative currently safe and accessible, and how will you confirm that?",
+    "check": "Check official instructions and current PPS information. Never walk or drive through floodwater; a named destination is not proof it is safe or open."
   },
   {
-    id: 'contacts',
-    emoji: '📇',
-    topic: 'Emergency contacts',
-    question: 'Where are the emergency contacts stored?',
-    primaryHint: "e.g. Ali's phone",
-    backupHint: 'Where else are they written?',
-    card: '{primary} is lost or dead.'
+    "id": "people",
+    "emoji": "🤝",
+    "topic": "People",
+    "question": "Who needs help leaving, and who will assist?",
+    "primaryHint": "Support needs and the person helping",
+    "backupHint": "Who can help if that person is unavailable?",
+    "card": "The designated helper is unavailable.",
+    "prompt": "Has the backup helper agreed, and can they meet the person’s mobility, care or communication needs?",
+    "check": "Consider children, older people, disabled people and anyone needing care. If no one needs assistance, say so and describe how everyone will be accounted for."
   },
   {
-    id: 'knowledge',
-    emoji: '🧠',
-    topic: 'Who knows the business',
-    question: 'Who knows the suppliers, customers, and money owed?',
-    primaryHint: 'e.g. Ali',
-    backupHint: 'Who else knows?',
-    card: '{primary} cannot be reached for a week.'
+    "id": "communication",
+    "emoji": "📡",
+    "topic": "Communication",
+    "question": "How will you contact or reunite with everyone?",
+    "primaryHint": "Contact method and agreed meeting arrangement",
+    "backupHint": "An agreed arrangement without working phones",
+    "card": "Phones or mobile networks are unavailable.",
+    "prompt": "Does your fallback still work without a phone, power or internet?",
+    "check": "Two messaging apps may depend on the same network. Agree an offline contact or reunion plan in advance, subject to official safety instructions."
   },
   {
-    id: 'reach',
-    emoji: '📡',
-    topic: 'Reaching each other',
-    question: 'How does everyone reach each other?',
-    primaryHint: 'e.g. WhatsApp group',
-    backupHint: 'What if that is down?',
-    card: '{primary} is down for everyone.'
+    "id": "essentials",
+    "emoji": "🎒",
+    "topic": "Essentials",
+    "question": "Where are your emergency supplies, essential medication and protected documents?",
+    "primaryHint": "Where they are stored and who can access them",
+    "backupHint": "A separate accessible supply or copy",
+    "card": "Your usual storage location is inaccessible.",
+    "prompt": "Can you reach the alternative without entering danger, and does it cover your household’s needs?",
+    "check": "Review water, food, essential medication and care needs, lights, power and protected documents. Two cupboards in the same flooded building are not independent backups."
   }
 ];
 
-/* Sample kedai plan for demos. */
 var DRY_RUN_EXAMPLE = [
-  { primary: 'Ali', backup: '' },
-  { primary: 'Shop drawer', backup: 'Shop drawer' },
-  { primary: 'Ali', backup: 'Notebook at home' },
-  { primary: 'Ali', backup: '' },
-  { primary: 'WhatsApp group', backup: 'Meet at the surau' }
+  {
+    "primary": "Official weather updates on my phone",
+    "backup": "Battery radio for official broadcasts"
+  },
+  {
+    "primary": "Family car via our usual road; confirm destination with official instructions",
+    "backup": ""
+  },
+  {
+    "primary": "My sister helps our grandfather leave",
+    "backup": "Neighbour has agreed to help; transport still needs checking"
+  },
+  {
+    "primary": "Family WhatsApp group",
+    "backup": "Telegram group"
+  },
+  {
+    "primary": "Go-bag and document copies by the front door",
+    "backup": "Separate copies and supplies at a relative’s home; access needs checking"
+  }
 ];
 
-/* Official Malaysian sources. Plain links only: Dry Run never fetches from
-   them and never shows warnings or shelter status itself. */
 var DRY_RUN_SOURCES = [
   {
     name: 'Public InfoBanjir',
@@ -84,3 +106,18 @@ var DRY_RUN_SOURCES = [
     url: 'https://infobencanajkmv2.jkm.gov.my/landing/'
   }
 ];
+
+DRY_RUN_SOURCES = DRY_RUN_SOURCES.concat([
+  {
+    "name": "Flood preparation checklist",
+    "by": "MKN",
+    "what": "Official guidance on warnings, evacuation, transport and supplies.",
+    "url": "https://www.mkn.gov.my/web/ms/2026/11/04/persediaan-kecemasan-banjir/"
+  },
+  {
+    "name": "Preparing for additional support needs",
+    "by": "MKN / KKM",
+    "what": "Planning for medication, care, mobility and communication needs.",
+    "url": "https://www.mkn.gov.my/web/ms/2025/11/30/persiapan-sebelum-banjir-bagi-golongan-berisiko-tinggi/"
+  }
+]);

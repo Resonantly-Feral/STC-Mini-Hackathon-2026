@@ -1,70 +1,27 @@
 # Dry Run
 
-**Play it live: https://stc-mini-hackathon-2026.vercel.app**
+A short flood-plan rehearsal: find gaps, check assumptions and plan your next steps.
 
-**Find the failure before the disaster does.**
+## Journey
+Enter a first choice and optional backup for each topic. Five shuffled disruption scenarios ask whether the backup could still work (yes/no/unsure) and require a written explanation. Review each topic, patch answers, rehearse again and compare recorded outcomes. Retain the responsive horizontal question grid.
 
-A drill for a small disaster plan. A kedai owner, household, or community
-committee writes down their plan in five answers. Dry Run then attacks it one
-failure card at a time, shows where it breaks, and lets them patch it and run
-the drill again.
+## Outcomes
+Missing first choice, missing backup, identical backup or self-reported failure: Gap found. A distinct backup with an uncertain/missing assessment or missing explanation: Needs checking. An explained yes with a distinct backup: Backup named, explicitly self-reported and unverified. Never infer safety from different strings. No survival predictions, correctness bets, resilience ratings or score-driven flood animation.
 
-Built for the STC Mini Hackathon 2026 (theme: Disaster Recovery).
+## Persistence
+Store flood answers by stable topic ID in dryrun.flood.v2. Leave dryrun.v1 untouched and never relabel its business answers. Changes invalidate prior reflections. Each replay requests fresh judgments. Store prior completed outcomes for comparison.
 
-## How it works
+## Presentation and limits
+Keep the navy/cyan identity, readable forms, keyboard access and reduced-motion support. The town is a neutral decorative illustration only. Sources are outbound links, not live data. Print first choices, backups, reflections and source links. Explicitly distinguish user judgments from verification. Follow authority instructions; never suggest entering floodwater or assume a PPS is open.
 
-1. **Plan.** From the home screen, start the simulation and fill in a
-   five-item checklist: a primary and an optional backup for each question.
-   Or tap **Try demo plan** to jump straight into a drill with a sample kedai.
-2. **Drill.** Five cards, shuffled, one per answer. Each card knocks out the
-   primary you typed. You bet HOLDS or BREAKS before the card flips. A small
-   town of five buildings, one per answer, floods as your plan breaks.
-3. **Results.** Where it broke, what held, how many bets you called, and a
-   concentration warning if one answer carries three or more parts of the plan.
-4. **Patch and replay.** Add a backup, run again, and compare before and after.
-5. **Official sources.** The results screen links to four official Malaysian
-   sources for real warnings and shelter status. Links only: Dry Run shows no
-   live data and makes no safety claims.
-6. **Print my plan.** One page for the fridge or the shop wall, so the plan
-   does not live only on a phone that may be dead when it matters.
+## Technical constraints
+Plain HTML/CSS/JS, no dependencies or backend, no AI at runtime, ordinary script tags and file:// support. Service worker caches static assets over HTTPS; bump cache version with each deployment. Pure logic tests in tests.html/tests.js.
 
-## Scoring rule
+## Run and test
+Open index.html to run. Open tests.html for the outcome and persistence tests. No install or build step.
 
-- No backup: BREAKS
-- Backup the same as the primary: BREAKS
-- Backup different from the primary: HOLDS
+## Guidance used
+- [MKN flood preparation](https://www.mkn.gov.my/web/ms/2026/11/04/persediaan-kecemasan-banjir/)
+- [MKN / KKM additional support needs](https://www.mkn.gov.my/web/ms/2025/11/30/persiapan-sebelum-banjir-bagi-golongan-berisiko-tinggi/)
 
-Answers are compared after trimming spaces and ignoring letter case. The meter
-labels are game feedback, not a risk rating.
-
-## Run it
-
-No install and no build step. Double-click `index.html`.
-
-To run the tests, double-click `tests.html`.
-
-Everything runs in the browser. The plan is saved in `localStorage` on your own
-device and the app makes no network calls.
-
-When the app is served over https, a service worker (`sw.js`) caches the static
-files so a refresh still works with no signal. It is not registered on
-`file://`. Bump `CACHE_VERSION` in `sw.js` on every deploy so the new files
-replace the old ones.
-
-## Files
-
-| File | What it holds |
-|---|---|
-| `index.html`, `style.css` | Page and styling |
-| `scoring.js` | Scoring rule and concentration warning (pure functions) |
-| `cards.js` | The five questions, their failure cards, and the official source links |
-| `town.js` | The isometric town, drawn in code as inline SVG (view only, no scoring) |
-| `app.js` | Screens, state, storage |
-| `sw.js` | Service worker: caches the static files so a refresh works offline (https only) |
-| `tests.html`, `tests.js` | Scoring tests |
-| `.kiro/steering/` | Product and tech steering for Kiro |
-
-## Built with
-
-The initial build was written by Claude (Anthropic) from the product spec in
-`.kiro/steering/product.md`. The steering files are set up for Kiro.
+Wording is an educational synthesis, not an official or exhaustive checklist. Original business-drill screenshots in the repository are historical and do not represent this version.
