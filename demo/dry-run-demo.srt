@@ -3,77 +3,77 @@
 STC MINI HACKATHON 2026 · DISASTER RECOVERY · DRY RUN · Find gaps in your flood plan before you need it. · A short flood-plan rehearsal for a household, a kedai or a community.
 
 2
-00:00:05,732 --> 00:00:10,232
+00:00:05,718 --> 00:00:10,218
 Five topics: warnings, evacuation, people, communication and essentials.
 
 3
-00:00:10,240 --> 00:00:14,429
+00:00:10,221 --> 00:00:14,349
 For this demo, a fictional sample plan. Your own plan stays separate.
 
 4
-00:00:14,440 --> 00:00:19,551
+00:00:14,351 --> 00:00:19,453
 Each card is a disruption. Would your backup still work? Choose, then explain why.
 
 5
-00:00:19,554 --> 00:00:24,457
+00:00:19,455 --> 00:00:24,359
 No backup for transport: the plan has a gap, and the water rises.
 
 6
-00:00:24,460 --> 00:00:28,345
+00:00:24,363 --> 00:00:28,226
 Now the shared failure.
 
 7
-00:00:28,347 --> 00:00:33,347
+00:00:28,227 --> 00:00:33,227
 First choice WhatsApp, backup Telegram. Two apps, one mobile network.
 
 8
-00:00:33,349 --> 00:00:40,913
+00:00:33,229 --> 00:00:40,733
 If the network goes down, both go down. That is not really a backup.
 
 9
-00:00:40,915 --> 00:00:46,317
+00:00:40,743 --> 00:00:46,147
 The review: gaps found, things to check, and backups named.
 
 10
-00:00:46,322 --> 00:00:51,226
+00:00:46,148 --> 00:00:51,051
 Every topic gets its own water level and plain-language next step.
 
 11
-00:00:51,228 --> 00:00:56,611
+00:00:51,053 --> 00:00:56,435
 Communication: gap found. Patch it.
 
 12
-00:00:56,613 --> 00:01:01,818
+00:00:56,437 --> 00:01:01,621
 Patch: a fallback that does not need the phone network at all.
 
 13
-00:01:01,820 --> 00:01:06,055
+00:01:01,623 --> 00:01:05,850
 Then rehearse again.
 
 14
-00:01:06,057 --> 00:01:18,879
+00:01:05,851 --> 00:01:18,491
 The changed answer is flagged: reassess this scenario.
 
 15
-00:01:18,880 --> 00:01:21,788
+00:01:18,514 --> 00:01:21,421
 Reassessed.
 
 16
-00:01:21,789 --> 00:01:27,290
+00:01:21,426 --> 00:01:26,927
 Before and after: Communication went from gap found to backup named.
 
 17
-00:01:27,292 --> 00:01:32,396
+00:01:26,928 --> 00:01:32,030
 The other gaps stay visible. It is a rehearsal, not a safety rating.
 
 18
-00:01:32,398 --> 00:01:37,803
+00:01:32,033 --> 00:01:37,436
 For real warnings and shelters: official Malaysian sources, linked, never copied.
 
 19
-00:01:37,805 --> 00:01:41,805
+00:01:37,437 --> 00:01:41,436
 Print it for the fridge. It works offline, with no login, on any phone.
 
 20
-00:01:41,808 --> 00:01:47,808
+00:01:41,440 --> 00:01:47,441
 DRY RUN · A warning tells you danger is coming. · Dry Run shows which part of your plan fails when it arrives. · stc-mini-hackathon-2026.vercel.app

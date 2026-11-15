@@ -10,7 +10,7 @@ const path = require('path');
 const URL = process.argv[2] || 'https://stc-mini-hackathon-2026.vercel.app/';
 const OUT = __dirname;
 const RAW = path.join(OUT, 'raw');
-const W = 1440, H = 810;   // browser size; the video is scaled up to 1920x1080
+const W = 1152, H = 648;   // browser size; the video is scaled up to 1920x1080
 const cues = [];
 let t0 = 0, openCue = null;
 
@@ -31,9 +31,9 @@ const now = () => (Date.now() - t0) / 1000;
   /* Overlays live only in this recording session. */
   await page.addStyleTag({ content: `
 
-    #rec-cap { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%); z-index: 99999;
-      max-width: 1180px; padding: 14px 28px; border-radius: 18px; text-align: center;
-      font: 600 28px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff;
+    #rec-cap { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 99999;
+      max-width: 900px; padding: 9px 20px; border-radius: 12px; text-align: center;
+      font: 600 18px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff;
       background: rgba(4, 9, 22, .9); border: 2px solid rgba(34, 225, 255, .6);
       box-shadow: 0 12px 40px rgba(0,0,0,.5); opacity: 0; transition: opacity .35s; pointer-events: none; }
     #rec-cap.on { opacity: 1; }
@@ -44,9 +44,9 @@ const now = () => (Date.now() - t0) / 1000;
       opacity: 0; transition: opacity .6s; pointer-events: none; }
     #rec-title.on { opacity: 1; }
     #rec-title .eyebrow { font: 700 20px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 6px; color: #22e1ff; }
-    #rec-title h1 { margin: 0; font-size: 150px; line-height: .95; font-weight: 900; letter-spacing: 4px;
+    #rec-title h1 { margin: 0; font-size: 120px; line-height: .95; font-weight: 900; letter-spacing: 4px;
       background: linear-gradient(180deg, #fff 10%, #9defff 55%, #22e1ff); -webkit-background-clip: text; color: transparent; }
-    #rec-title .sub { font-size: 36px; font-weight: 600; }
+    #rec-title .sub { font-size: 30px; font-weight: 600; }
     #rec-title .small { font-size: 24px; color: #a3b5d6; max-width: 1000px; }
     #rec-title .url { font: 700 28px ui-monospace, Menlo, Consolas, monospace; color: #22e1ff; margin-top: 10px; }
   `});
