@@ -535,6 +535,19 @@ main.results-screen { max-width: 1600px; }
 .results-grid p { font-size: 16px; }
 .results-grid .chip { font-size: 11px; }
 .results-grid button { margin-top: auto; width: 100%; padding: 12px; font-size: 16px; }
+/* Independent water columns illustrate each topic's recorded outcome. */
+.results-grid .topic-water { position: relative; isolation: isolate; overflow: hidden; min-height: 440px; background: #0b1428; }
+.topic-water.gap { --topic-level: 76%; }
+.topic-water.check { --topic-level: 44%; }
+.topic-water.backup { --topic-level: 12%; }
+.topic-water-fill { position: absolute; z-index: -1; pointer-events: none; inset: auto 0 0; height: var(--topic-level); background: linear-gradient(180deg,#155575 0%,#10334f 100%); border-top: 2px solid #46cfe5; animation: topic-rise 1.2s ease-out both; }
+.topic-wave { position: absolute; inset: -9px -24px auto; height: 16px; background: radial-gradient(ellipse at 50% 100%,#46cfe5 48%,transparent 52%) 0 0 / 48px 16px repeat-x; opacity: .55; animation: topic-drift 4s linear infinite; }
+.topic-water .chip { background: #0b1428; }
+.topic-water p { color: #e9f1ff; }
+.topic-water button { background: #0b1428; }
+@keyframes topic-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes topic-drift { to { transform: translateX(48px); } }
+@media (prefers-reduced-motion: reduce) { .topic-water-fill, .topic-wave { animation: none; } }
 .results-screen > .btn-primary, .results-screen > .btn-demo { display: block; max-width: 620px; margin-left: auto; margin-right: auto; }
 @media (min-width: 640px) {
   main.results-screen { padding: 24px 24px 72px; }

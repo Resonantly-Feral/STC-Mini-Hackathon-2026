@@ -212,7 +212,8 @@
   }
   function results() {
     var scores=DryRun.scorePlan(plan), counts=DryRun.summary(plan);
-    var panels=Q.map(function(q,i){var score=scores[i];return el('section',{class:'panel outcome '+score.result.toLowerCase()},[
+    var panels=Q.map(function(q,i){var score=scores[i];return el('section',{class:'panel outcome topic-water '+score.result.toLowerCase(),'aria-label':q.topic+' result'},[
+      el('div',{class:'topic-water-fill','aria-hidden':'true'},[el('div',{class:'topic-wave'})]),
       el('h2',{text:q.emoji+' '+q.topic}),el('span',{class:'chip',text:labels[score.result]}),
       el('p',{text:explain(plan[i],score)}),
       el('p',{class:'small',text:'Backup: '+(plan[i].backup||'None recorded')}),
@@ -230,13 +231,12 @@
       el('div',{class:'review-counts'},Object.keys(labels).map(function(key){return el('section',{class:'panel outcome '+key.toLowerCase()},[
         el('div',{class:'tile-num',text:String(counts[key])}),el('p',{text:labels[key]})
       ]);})),
-      el('p',{class:'small muted water-note',text:'Rehearsal water: '+counts.GAP+' of 5 topics with gaps. Illustration only—not flood depth or a safety score.'}),note(),compare
+      el('p',{class:'small muted water-note',text:'Each topic has its own water level: high = gap found · medium = needs checking · low = backup named. Based on recorded answers, not flood depth or verified preparedness.'}),note(),compare
     ].concat([el('div',{class:'results-grid'},panels)]).concat([
       button('Patch and replay',function(){planScreen();},'btn-primary','patch'),
       button('Print my plan',function(){window.print();},'btn-ghost btn-demo','print'),
       sources(),printSheet()
     ]), 'results');
-    setWater(counts.GAP);
   }
   function printSheet() {
     return el('section',{id:'sheet'},[

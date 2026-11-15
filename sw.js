@@ -2,7 +2,7 @@
    Registered from app.js only when the page is served over https. */
 
 /* Bump this on every deploy so the new files replace the old ones. */
-var CACHE_VERSION = 'dryrun-flood-v9';
+var CACHE_VERSION = 'dryrun-flood-v10';
 
 var FILES = [
   './',
