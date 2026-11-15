@@ -49,6 +49,12 @@ This is a warning only and does not change scoring.
 - "Print my plan" on the results screen prints a one-page paper copy
   (question, first choice, backup; a blank line to fill by hand where
   there is no backup). The plan must not live only on the phone.
+- Official sources: the results screen and the printed sheet list four
+  official Malaysian sources (Public InfoBanjir, METMalaysia, NADMA
+  Portal Bencana, JKM InfoBencana) as plain links, each labelled with
+  the agency that runs it, plus "In an emergency, call 999". The app
+  never fetches from them and never shows warnings, flood levels or
+  shelter status itself, and says so next to the links.
 
 ## Look and feel
 A colourful browser card game dressed as an emergency operations
@@ -88,7 +94,8 @@ command centre. Not a form and not a dashboard of real data.
 - Mobile-first, large text, plain language.
 
 ## NOT building
-- Maps, weather or flood alerts, SOS, donations, chatbots
+- Maps, weather or flood alerts, SOS, donations, chatbots. No live
+  data of any kind: official sources are links only.
 - Accounts, sharing, multi-user
 - Points, badges, leaderboards, characters, sound
 - Any scoring logic beyond the rule above

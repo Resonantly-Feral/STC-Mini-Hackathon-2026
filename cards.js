@@ -55,3 +55,32 @@ var DRY_RUN_EXAMPLE = [
   { primary: 'Ali', backup: '' },
   { primary: 'WhatsApp group', backup: 'Meet at the surau' }
 ];
+
+/* Official Malaysian sources. Plain links only: Dry Run never fetches from
+   them and never shows warnings or shelter status itself. */
+var DRY_RUN_SOURCES = [
+  {
+    name: 'Public InfoBanjir',
+    by: 'Department of Irrigation and Drainage (JPS)',
+    what: 'River levels, rainfall and flood warnings.',
+    url: 'https://publicinfobanjir.water.gov.my/'
+  },
+  {
+    name: 'METMalaysia',
+    by: 'Malaysian Meteorological Department',
+    what: 'Weather forecasts and weather warnings.',
+    url: 'https://www.met.gov.my/'
+  },
+  {
+    name: 'Portal Bencana',
+    by: 'National Disaster Management Agency (NADMA)',
+    what: 'The current disaster situation across Malaysia.',
+    url: 'https://portalbencana.nadma.gov.my/'
+  },
+  {
+    name: 'InfoBencana JKM',
+    by: 'Department of Social Welfare (JKM)',
+    what: 'Which temporary evacuation centres (PPS) are activated.',
+    url: 'https://infobencanajkmv2.jkm.gov.my/landing/'
+  }
+];

@@ -376,6 +376,13 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .tag.breaks { background: var(--red); color: #24040a; }
 .tag.holds { background: var(--green); color: #02200f; }
 
+/* Official sources: plain outbound links. */
+.sources { margin-top: 22px; }
+.sources li { border-left-color: var(--cyan); display: flex; flex-direction: column; gap: 2px; }
+.sources a { color: var(--cyan); font-weight: 800; font-size: 19px; padding: 6px 0; text-underline-offset: 4px; }
+.sources a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 6px; }
+.src-by { font-family: var(--mono); font-size: 12px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); }
+
 /* Before and after: the centrepiece after a replay. */
 .compare-panel { border-color: rgba(34, 225, 255, .6); box-shadow: 0 0 44px rgba(34, 225, 255, .22), 0 14px 40px rgba(0, 0, 0, .35); padding: 22px 16px; }
 .compare-panel h2 { text-align: center; font-size: 26px; }
@@ -440,4 +447,7 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   #sheet tbody th { width: 38%; font-weight: 700; }
   #sheet .gap { font-style: italic; }
   #sheet .sheet-note { margin-top: 14pt; }
+  #sheet h2 { font-size: 14pt; margin: 16pt 0 4pt; }
+  #sheet ul { margin: 0 0 8pt; padding-left: 16pt; font-size: 11pt; }
+  #sheet li { overflow-wrap: anywhere; }
 }

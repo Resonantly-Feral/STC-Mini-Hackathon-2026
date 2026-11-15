@@ -431,7 +431,30 @@
         ])]),
         el('tbody', {}, rows)
       ]),
-      el('p', { class: 'sheet-note', text: 'Fill any blank line by hand, then run the drill again.' })
+      el('p', { class: 'sheet-note', text: 'Fill any blank line by hand, then run the drill again.' }),
+      el('h2', { text: 'Official information (needs internet)' }),
+      el('ul', {}, DRY_RUN_SOURCES.map(function (src) {
+        return el('li', { text: src.name + ' (' + src.by + '): ' + src.url.replace('https://', '') });
+      })),
+      el('p', { text: 'In an emergency, call 999.' })
+    ]);
+  }
+
+  /* Where to look for real warnings. Links only; nothing is fetched. */
+  function sourcesPanel() {
+    return el('section', { class: 'panel sources', id: 'sources' }, [
+      el('h2', { text: 'When it is real: official sources' }),
+      el('p', { text: 'Dry Run tests your plan. It does not show warnings, flood levels or which shelters are open. ' +
+        'For those, use the official sources below and follow instructions from local authorities.' }),
+      el('ul', { class: 'list' }, DRY_RUN_SOURCES.map(function (src) {
+        return el('li', {}, [
+          el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', text: src.name }),
+          el('span', { class: 'src-by', text: src.by }),
+          el('span', { text: src.what })
+        ]);
+      })),
+      el('p', { class: 'small muted', text: 'These links open other websites and need an internet connection. ' +
+        'In an emergency, call 999.' })
     ]);
   }
 
@@ -538,6 +561,7 @@
       el('button', { class: 'btn-primary', id: 'patch', text: 'Patch and replay', onclick: planScreen }),
       el('button', { class: 'btn-ghost', id: 'print', style: 'width:100%;margin-top:12px', text: 'Print my plan',
         onclick: function () { window.print(); } }),
+      sourcesPanel(),
       el('p', { class: 'small muted', text: 'The meter labels are game feedback, not a risk rating. ' +
         'A backup only counts here if you named one that is different from the primary. ' +
         'Whether it would really work is for you to check.' }),
