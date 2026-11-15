@@ -578,6 +578,11 @@ main.drill-screen { max-width: 1600px; }
 .scenario-guidance summary { cursor: pointer; color: var(--cyan); min-height: 44px; padding: 10px 0; }
 .scenario-guidance p { margin: 8px 0; }
 .rehearsal-card textarea { min-height: 92px; font-size: 14px; }
+.rehearsal-card textarea { overflow-y: hidden; field-sizing: content; }
+.reassess-note, .result-change { padding: 10px; border-radius: 8px; background: #102e40; font-size: 14px; }
+.reassess-note { border-left: 3px solid var(--amber); }
+.demo-shortcut { width: auto; padding: 10px 16px; font-size: 15px; }
+.rehearsal-card:focus { outline: 3px solid var(--cyan); outline-offset: 3px; }
 .rehearsal-card > label { font-size: 11px; }
 .rehearsal-card { background: #0b1428; }
 .rehearsal-grid { align-items: start; }
