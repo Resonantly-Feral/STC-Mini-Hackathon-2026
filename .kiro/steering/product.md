@@ -57,30 +57,43 @@ This is a warning only and does not change scoring.
   shelter status itself, and says so next to the links.
 
 ## Look and feel
-A colourful browser card game dressed as an emergency operations
-command centre. Not a form and not a dashboard of real data.
+A playable disaster-recovery simulation dressed as an emergency
+operations command centre. Not a form and not a dashboard of real data.
 - Deep navy and charcoal background with a faint grid and glow.
   Glass panels with glowing borders.
-- Colour roles: cyan = interactive, amber = warnings and incoming
-  events, red = failures, green = a backup taking over.
-- Home screen: DRY RUN title, tagline, a five-segment resilience ring
-  (empty until the first drill, then the last drill's result), and a
-  START SIMULATION button.
+- Colour roles: cyan = interactive, amber = warnings, incoming events
+  and edited-but-not-retested answers, red = failures, green = a
+  backup taking over.
+- The town: a small isometric neighbourhood of five buildings, one per
+  question (house = keys, records office = documents, community hall =
+  contacts, kedai = who knows the business, signal tower = reaching
+  each other). It is the resilience indicator on every screen. A
+  building turns red and sinks when its card BREAKS and gets a green
+  tick when it HOLDS; water rises in the town one step per break.
+  town.js draws it in code as inline SVG and only displays the states
+  it is given. It never scores.
+- Home screen: DRY RUN title, tagline, the town (untested until the
+  first drill, then the last drill's result), START SIMULATION, and
+  TRY DEMO PLAN, which loads the sample kedai plan and goes straight
+  into the drill.
 - Plan entry is a checklist: numbered cards, a progress strip, and
   visually distinct primary and backup fields. The progress strip only
-  shows what is filled in. It never scores before the drill.
-- One large event card centred on screen. It arrives with an alert
+  shows what is filled in. It never scores before the drill. When
+  patching, a changed answer is marked amber "Edited, run the drill to
+  retest".
+- Drill: rain and a dark sky over the town, the building under attack
+  is targeted in amber. One large event card arrives with an alert
   animation and flips with CSS to HOLDS (green) or BREAKS (red). The
   back shows the primary knocked out and what takes over, if anything.
-- The water is a blue layer that rises from the bottom of the whole
-  screen behind the card, with a smooth CSS transition. A five-cell
-  bar shows the same level.
-- Results are a dashboard: failures, correct bets, meter, warnings,
-  what broke, what held. After a replay, the before-and-after panel
-  with two animated gauges is the centrepiece.
+- The water is also a blue layer that rises from the bottom of the
+  whole screen behind the card, with a smooth CSS transition.
+- Results are a dashboard: failures, correct bets, the town, warnings,
+  what broke, what held. Tapping a flooded building opens the plan at
+  that question's backup field. After a replay, the before-and-after
+  panel with last run's town above this run's town is the centrepiece.
 - Big buttons, bold type, one emoji per card as its icon.
-- CSS animations only, switched off under prefers-reduced-motion.
-  No images, no sprites, no canvas, no characters, no sound.
+- Animations are CSS only and switch off under prefers-reduced-motion.
+  No image files, no canvas, no characters, no sound.
 - Every number on screen comes from the player's own plan and drill.
   No invented statistics and no safety claims.
 
@@ -97,5 +110,5 @@ command centre. Not a form and not a dashboard of real data.
 - Maps, weather or flood alerts, SOS, donations, chatbots. No live
   data of any kind: official sources are links only.
 - Accounts, sharing, multi-user
-- Points, badges, leaderboards, characters, sound
+- Points, badges, leaderboards, coins, characters, sound
 - Any scoring logic beyond the rule above

@@ -15,8 +15,10 @@ Built for the STC Mini Hackathon 2026 (theme: Disaster Recovery).
 
 1. **Plan.** From the home screen, start the simulation and fill in a
    five-item checklist: a primary and an optional backup for each question.
+   Or tap **Try demo plan** to jump straight into a drill with a sample kedai.
 2. **Drill.** Five cards, shuffled, one per answer. Each card knocks out the
-   primary you typed. You bet HOLDS or BREAKS before the card flips.
+   primary you typed. You bet HOLDS or BREAKS before the card flips. A small
+   town of five buildings, one per answer, floods as your plan breaks.
 3. **Results.** Where it broke, what held, how many bets you called, and a
    concentration warning if one answer carries three or more parts of the plan.
 4. **Patch and replay.** Add a backup, run again, and compare before and after.
@@ -55,7 +57,8 @@ replace the old ones.
 |---|---|
 | `index.html`, `style.css` | Page and styling |
 | `scoring.js` | Scoring rule and concentration warning (pure functions) |
-| `cards.js` | The five questions and their failure cards |
+| `cards.js` | The five questions, their failure cards, and the official source links |
+| `town.js` | The isometric town, drawn in code as inline SVG (view only, no scoring) |
 | `app.js` | Screens, state, storage |
 | `sw.js` | Service worker: caches the static files so a refresh works offline (https only) |
 | `tests.html`, `tests.js` | Scoring tests |

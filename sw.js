@@ -2,7 +2,7 @@
    Registered from app.js only when the page is served over https. */
 
 /* Bump this on every deploy so the new files replace the old ones. */
-var CACHE_VERSION = 'dryrun-v3';
+var CACHE_VERSION = 'dryrun-v4';
 
 var FILES = [
   './',
@@ -10,6 +10,7 @@ var FILES = [
   'style.css',
   'scoring.js',
   'cards.js',
+  'town.js',
   'app.js'
 ];
 

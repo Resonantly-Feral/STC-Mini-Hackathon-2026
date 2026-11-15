@@ -101,18 +101,22 @@
     var held = hasRun ? total - state.lastBreaks : 0;
     var level = hasRun ? DryRun.meterLabel(state.lastBreaks).level : 'idle';
 
-    var ring = el('div', {
-      class: 'ring ' + level, style: '--held:' + held, role: 'img',
-      'aria-label': hasRun
-        ? 'Last drill: ' + held + ' of ' + total + ' parts of the plan held.'
-        : 'Resilience meter. No drill run yet.'
-    }, [
-      el('div', { class: 'ring-sweep' }),
-      el('div', { class: 'ring-core' }, [
-        el('div', { class: 'ring-num', text: hasRun ? held + '/' + total : '?' }),
-        el('div', { class: 'ring-cap', text: hasRun ? 'held last drill' : 'not tested yet' })
-      ])
-    ]);
+    var town = DryRunTown.build({
+      states: QUESTIONS.map(function (q) {
+        return !hasRun ? 'idle' : state.lastBroken.indexOf(q.id) !== -1 ? 'breaks' : 'holds';
+      }),
+      active: -1,
+      label: hasRun
+        ? 'Your town after the last drill: ' + held + ' of ' + total + ' buildings held.'
+        : 'Your town. Five buildings, one for each part of your plan. Not tested yet.'
+    });
+    town.el.className += ' town-hero ' + level;
+
+    function demo() {
+      state = { plan: DRY_RUN_EXAMPLE.map(function (a) { return { primary: a.primary, backup: a.backup }; }), lastBreaks: null, lastBroken: [] };
+      save();
+      startDrill();
+    }
 
     var steps = [
       ['01', 'Write your plan', 'Five questions. A primary and a backup for each.'],
@@ -130,14 +134,19 @@
         el('p', { class: 'eyebrow', text: 'Disaster plan drill' }),
         el('h1', { class: 'hero-title', text: 'DRY RUN' }),
         el('p', { class: 'tagline', text: 'Find the failure before the disaster does.' }),
-        ring,
+        town.el,
         hasRun
-          ? el('div', { class: 'hero-meter' }, [meterChip(state.lastBreaks)])
-          : el('p', { class: 'hero-meter muted small', text: 'Resilience meter: waiting for your first drill.' }),
+          ? el('div', { class: 'hero-meter' }, [
+            meterChip(state.lastBreaks),
+            el('span', { class: 'small muted', text: held + ' of ' + total + ' held in your last drill' })
+          ])
+          : el('p', { class: 'hero-meter muted small', text: 'Five buildings, one for each part of your plan. Not tested yet.' }),
         el('button', {
           class: 'btn-primary btn-hero', id: 'begin',
-          text: hasRun ? 'CONTINUE SIMULATION' : 'START SIMULATION', onclick: planScreen
-        })
+          text: hasRun ? 'CONTINUE SIMULATION' : 'START SIMULATION', onclick: function () { planScreen(); }
+        }),
+        el('button', { class: 'btn-ghost btn-demo', id: 'demo', text: 'Try demo plan', onclick: demo }),
+        el('p', { class: 'small muted', text: 'The demo plan is a made-up kedai with three weak spots. It replaces any plan saved here.' })
       ]),
       el('ol', { class: 'steps' }, steps),
       el('p', { class: 'small muted center', text: 'A drill for a kedai, a household, or a committee. ' +
@@ -147,9 +156,11 @@
 
   /* ---------- Screen 1: the plan ---------- */
 
-  function planScreen() {
+  /* focusIndex (optional): jump straight to that question's backup field. */
+  function planScreen(focusIndex) {
     setWater(0);
     var isReplay = state.lastBreaks !== null;
+    var before = state.plan.map(function (a) { return a.primary + '\n' + a.backup; });
     var error = el('p', { class: 'error', role: 'alert' });
     var inputs = [];
     var total = QUESTIONS.length;
@@ -202,11 +213,14 @@
         var hasBackup = !!pair.backup.value.trim();
         if (hasPrimary) primaries += 1;
         if (hasBackup) backups += 1;
-        pair.chip.textContent = !hasPrimary ? 'To do' : hasBackup ? 'Backup named' : 'Primary set';
-        pair.chip.className = 'chip' + (!hasPrimary ? '' : hasBackup ? ' two' : ' one');
+        var edited = isReplay && (pair.primary.value.trim() + '\n' + pair.backup.value.trim()) !== before[i];
+        pair.chip.textContent = edited ? 'Edited, run the drill to retest'
+          : !hasPrimary ? 'To do' : hasBackup ? 'Backup named' : 'Primary set';
+        pair.chip.className = 'chip' + (edited ? ' edit' : !hasPrimary ? '' : hasBackup ? ' two' : ' one');
+        pair.block.classList.toggle('edited', edited);
         pair.block.classList.toggle('has-primary', hasPrimary);
         pair.block.classList.toggle('has-backup', hasBackup);
-        pips[i].className = 'pip' + (!hasPrimary ? '' : hasBackup ? ' two' : ' one');
+        pips[i].className = 'pip' + (edited ? ' now' : !hasPrimary ? '' : hasBackup ? ' two' : ' one');
       });
       countText.textContent = primaries + ' of ' + total + ' primaries set · ' +
         backups + ' of ' + total + ' backups named';
@@ -260,6 +274,11 @@
         isReplay ? el('button', { class: 'btn-ghost', id: 'reset', text: 'Start over', onclick: startOver }) : null
       ])
     ]));
+
+    if (typeof focusIndex === 'number' && inputs[focusIndex]) {
+      inputs[focusIndex].block.scrollIntoView({ block: 'center' });
+      inputs[focusIndex].backup.focus({ preventScroll: true });
+    }
   }
 
   /* ---------- Screen 2: the drill ---------- */
@@ -272,7 +291,8 @@
       step: 0,
       breaks: 0,
       correctBets: 0,
-      previousBreaks: state.lastBreaks
+      previousBreaks: state.lastBreaks,
+      previousBroken: state.lastBroken.slice()
     };
     setWater(0);
     cardScreen();
@@ -284,6 +304,15 @@
     if (reason === 'no-backup') return 'No backup named. Nothing takes over.';
     if (reason === 'same-as-primary') return 'The backup is the same as the primary.';
     return answer.backup + ' takes over.';
+  }
+
+  /* Town states for this run: buildings whose card has been revealed show the result. */
+  function townStates(revealed) {
+    var states = QUESTIONS.map(function () { return 'idle'; });
+    run.order.slice(0, revealed).forEach(function (index) {
+      states[index] = run.scores[index].result === 'BREAKS' ? 'breaks' : 'holds';
+    });
+    return states;
   }
 
   /* Primary knocked out on the left; on the right, what takes over (or nothing). */
@@ -334,7 +363,8 @@
     ]);
     var card = el('div', { class: 'card', id: 'card' }, [el('div', { class: 'card-inner' }, [front, back])]);
     var meterSlot = el('div', {}, [meterChip(run.breaks)]);
-    var barSlot = el('div', { class: 'bar-slot' }, [meterBar(run.breaks)]);
+    var town = DryRunTown.build({ states: townStates(run.step), active: index, water: run.breaks, storm: true });
+    town.el.className += ' town-drill';
     var actions = el('div', { class: 'actions', 'aria-live': 'polite' });
 
     function bet(guess) {
@@ -349,8 +379,7 @@
       setWater(run.breaks);
       meterSlot.textContent = '';
       meterSlot.appendChild(meterChip(run.breaks));
-      barSlot.textContent = '';
-      barSlot.appendChild(meterBar(run.breaks));
+      town.set({ states: townStates(run.step + 1), active: -1, water: run.breaks, storm: true });
 
       var last = run.step === run.order.length - 1;
       actions.textContent = '';
@@ -391,10 +420,7 @@
         ]),
         meterSlot
       ]),
-      el('div', { class: 'meter-row' }, [
-        el('span', { class: 'mono-cap', text: 'Water level' }),
-        barSlot
-      ]),
+      town.el,
       card,
       actions
     ]);
@@ -468,12 +494,15 @@
     resultsScreen();
   }
 
-  function gauge(title, breaks, id) {
-    var fill = el('div', { class: 'fill' });
-    setTimeout(function () { fill.style.height = (breaks / QUESTIONS.length * 100) + '%'; }, 30);
+  /* One town per run. It starts dry, then floods to its level so the two can be compared. */
+  function gauge(title, breaks, brokenIds, id, onPick) {
+    var states = QUESTIONS.map(function (q) { return brokenIds.indexOf(q.id) !== -1 ? 'breaks' : 'holds'; });
+    var town = DryRunTown.build({ states: states, active: -1, water: 0, onPick: onPick,
+      label: title + ': ' + breaks + ' of ' + QUESTIONS.length + ' buildings flooded.' });
+    setTimeout(function () { town.set({ states: states, active: -1, water: breaks }); }, 350);
     return el('div', { class: 'gauge ' + DryRun.meterLabel(breaks).level, id: id }, [
       el('div', { class: 'gauge-title', text: title }),
-      el('div', { class: 'tube' }, [fill]),
+      town.el,
       el('div', { class: 'gauge-num', text: plural(breaks, 'break') }),
       el('div', { class: 'gauge-label', text: DryRun.meterLabel(breaks).text })
     ]);
@@ -518,13 +547,18 @@
       compare = el('section', { class: 'panel compare-panel ' + (diff > 0 ? 'better' : diff < 0 ? 'worse' : 'same'), id: 'compare' }, [
         el('h2', { text: 'Before and after' }),
         el('div', { class: 'compare' }, [
-          gauge('Last run', run.previousBreaks, 'gauge-before'),
-          el('div', { class: 'arrow', 'aria-hidden': 'true', text: '→' }),
-          gauge('This run', breaks, 'gauge-after')
+          gauge('Last run', run.previousBreaks, run.previousBroken, 'gauge-before'),
+          el('div', { class: 'arrow', 'aria-hidden': 'true', text: '↓' }),
+          gauge('This run', breaks, state.lastBroken, 'gauge-after')
         ]),
         el('p', { class: 'compare-verdict', text: verdict })
       ]);
     }
+
+    var resultTown = DryRunTown.build({
+      states: townStates(run.order.length), active: -1, water: breaks,
+      onPick: function (index) { planScreen(index); }
+    });
 
     var tiles = el('div', { class: 'tiles' }, [
       el('section', { class: 'panel tile ' + (breaks === 0 ? 'good' : 'bad') }, [
@@ -539,8 +573,10 @@
       ]),
       el('section', { class: 'panel tile wide' }, [
         el('div', { class: 'tile-head' }, [el('div', { class: 'mono-cap', text: 'Resilience meter' }), meterChip(breaks)]),
+        resultTown.el,
         meterBar(breaks),
-        el('p', { class: 'tile-cap', text: 'Water rose ' + plural(breaks, 'step') + ' out of ' + total + '.' })
+        el('p', { class: 'tile-cap', text: 'Water rose ' + plural(breaks, 'step') + ' out of ' + total + '.' +
+          (breaks ? ' Tap a flooded building to patch it.' : '') })
       ])
     ]);
 
@@ -558,7 +594,7 @@
         el('h2', { text: 'What held' }),
         el('ul', { class: 'list', id: 'holds' }, held.map(item))
       ]) : null,
-      el('button', { class: 'btn-primary', id: 'patch', text: 'Patch and replay', onclick: planScreen }),
+      el('button', { class: 'btn-primary', id: 'patch', text: 'Patch and replay', onclick: function () { planScreen(); } }),
       el('button', { class: 'btn-ghost', id: 'print', style: 'width:100%;margin-top:12px', text: 'Print my plan',
         onclick: function () { window.print(); } }),
       sourcesPanel(),
