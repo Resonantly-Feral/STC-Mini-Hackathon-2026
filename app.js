@@ -13,7 +13,7 @@
   function beginPersonal() { demoMode=false; plan=freshPlan(); last=null; planScreen(); }
   function continuePersonal() { demoMode=false; plan=JSON.parse(JSON.stringify(savedPlan)); last=savedLast; planScreen(); }
   function beginSample(openPlan) {
-    demoMode=true; last=null; plan=DRY_RUN_EXAMPLE.map(function(a){return {primary:a.primary,backup:a.backup,assessment:'',reason:''};});
+    demoMode=true; last=null; plan=DRY_RUN_EXAMPLE.map(function(a,i){return {primary:a.primary,backup:a.backup,assessment:DRY_RUN_REFLECTIONS[i].assessment,reason:DRY_RUN_REFLECTIONS[i].reason};});
     if(openPlan) planScreen(); else startDrill();
   }
   var labels = { GAP: 'Gap found', CHECK: 'Needs checking', BACKUP: 'Backup named' };
@@ -129,7 +129,7 @@
         if(missing >= 0) {error.textContent='Enter a first choice for each topic, or write “not planned yet”.';pairs[missing].primary.focus();return;}
         startDrill();
       },'btn-primary','start'),
-        button('Fill sample answers',function(){beginSample(true);},'btn-ghost','example'),
+        button('Switch to sample plan',function(){beginSample(true);},'btn-ghost','example'),
         button('Back to home',function(){read();home();},'btn-ghost')
       ])
     ],'plan');
@@ -137,10 +137,8 @@
   }
   function startDrill() {
     run = {previous:last,outcomes:[]};
-    plan.forEach(function(a,i){
-      a.assessment=demoMode ? DRY_RUN_REFLECTIONS[i].assessment : '';
-      a.reason=demoMode ? DRY_RUN_REFLECTIONS[i].reason : '';
-    });
+    // Seed examples only when entering sample mode. revise() clears reflections
+    // for changed plans; replay must never restore stale canned answers.
     save(); drill();
   }
   function explain(answer, score) {
@@ -157,7 +155,7 @@
     var waterNote=el('p',{class:'small muted water-note',role:'status'});
     function refresh() {
       var complete=fields.filter(function(f){return f.answer.assessment && f.why.value.trim();}).length;
-      count.textContent=complete+' of 5 reflections ready'+(demoMode ? ' · prefilled examples, editable' : '');
+      count.textContent=complete+' of 5 reflections ready'+(demoMode ? ' · sample reflections, editable' : '');
       var gaps=fields.filter(function(f){return f.answer.assessment && DryRun.scoreAnswer(f.answer).result==='GAP';}).length;
       setWater(gaps);
       waterNote.textContent='Rehearsal water: '+gaps+' of 5 topics with gaps so far. Illustration only—not flood depth or a safety score.';
@@ -166,7 +164,8 @@
       var answer=plan[i];
       var why=el('textarea',{id:q.id+'-reflection',rows:'2',maxlength:'600',placeholder:'Why? What needs checking?'});
       why.value=answer.reason;
-      why.addEventListener('input',function(){answer.reason=why.value;save();refresh();});
+      function fit(){why.style.height='auto';why.style.height=Math.max(92,why.scrollHeight+2)+'px';}
+      why.addEventListener('input',function(){answer.reason=why.value;fit();save();refresh();});
       var radios=[];
       var choices=el('fieldset',{class:'reflection-choices'},[
         el('legend',{text:'Would your backup still work?'})
@@ -175,9 +174,10 @@
         radio.checked=answer.assessment===item[0]; radios.push(radio);
         return el('label',{class:'choice'},[radio,el('span',{text:item[1]})]);
       })));
-      fields.push({answer:answer,why:why,radios:radios});
-      return el('section',{class:'panel rehearsal-card','aria-label':q.topic+' scenario'},[
+      fields.push({answer:answer,why:why,radios:radios,fit:fit});
+      return el('section',{class:'panel rehearsal-card',id:q.id+'-scenario',tabindex:'-1','aria-label':q.topic+' scenario'},[
         el('h2',{text:q.emoji+' '+q.topic}),
+        run.previous && !answer.assessment ? el('p',{class:'reassess-note',text:'Plan updated · reassess this scenario. Previous result: '+labels[run.previous.outcomes[i]]+'.'}) : null,
         el('div',{class:'scenario-summary'},[
           el('h3',{text:q.card})
         ]),
@@ -195,6 +195,7 @@
       status('All five scenarios'),el('h1',{text:demoMode ? 'Explore the sample rehearsal' : 'Rehearse your flood plan'}),
       el('p',{class:'lead',text:'Imagine each disruption. Would your backup work? Choose, explain, then review.'}),
       el('p',{class:'small muted',text:demoMode ? 'Fictional sample · edit the example reflections to explore. Your personal plan stays separate.' : 'Your plan is under each card. These are your judgments; backups are not independently verified.'}),
+      demoMode ? button('Demo shortcut: two apps, one network',function(){var card=document.getElementById('communication-scenario');card.querySelector('.plan-detail').open=true;card.scrollIntoView({block:'center'});card.focus({preventScroll:true});},'btn-ghost demo-shortcut') : null,
       count,el('div',{class:'rehearsal-grid'},cards),error,
       el('div',{class:'plan-actions'},[
         button('Review all five reflections',function(){
@@ -208,6 +209,7 @@
         button('Edit plan',function(){planScreen();},'btn-ghost','edit-plan')
       ]), waterNote, note()
     ],'drill');
+    fields.forEach(function(f){f.fit();});
     refresh();
   }
   function results() {
@@ -215,6 +217,7 @@
     var panels=Q.map(function(q,i){var score=scores[i];return el('section',{class:'panel outcome topic-water '+score.result.toLowerCase(),'aria-label':q.topic+' result'},[
       el('div',{class:'topic-water-fill','aria-hidden':'true'},[el('div',{class:'topic-wave'})]),
       el('h2',{text:q.emoji+' '+q.topic}),el('span',{class:'chip',text:labels[score.result]}),
+      run.previous ? el('p',{class:'result-change',text:labels[run.previous.outcomes[i]]+' → '+labels[score.result]+(run.previous.outcomes[i]!==score.result ? ' · reassessed' : ' · unchanged')}) : null,
       el('p',{text:explain(plan[i],score)}),
       el('p',{class:'small',text:'Backup: '+(plan[i].backup||'None recorded')}),
       el('p',{class:'small muted',text:'Your note: '+plan[i].reason}),
