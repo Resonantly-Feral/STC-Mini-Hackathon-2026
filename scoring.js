@@ -1,61 +1,32 @@
-/* Dry Run scoring. Pure functions only: no DOM, no storage. */
+/* Records gaps and user reflections. Never predicts safety or validates a backup. */
 var DryRun = (function () {
   'use strict';
-
-  function norm(text) {
-    return String(text == null ? '' : text).trim().toLowerCase();
-  }
-
-  /* One answer = { primary, backup }. Returns { result, reason }. */
+  function norm(value) { return String(value == null ? '' : value).trim().toLowerCase(); }
   function scoreAnswer(answer) {
-    var primary = norm(answer && answer.primary);
-    var backup = norm(answer && answer.backup);
-    if (!backup) return { result: 'BREAKS', reason: 'no-backup' };
-    if (backup === primary) return { result: 'BREAKS', reason: 'same-as-primary' };
-    return { result: 'HOLDS', reason: 'distinct-backup' };
+    answer = answer || {};
+    if (!norm(answer.primary)) return { result: 'GAP', reason: 'no-primary' };
+    if (!norm(answer.backup)) return { result: 'GAP', reason: 'no-backup' };
+    if (norm(answer.primary) === norm(answer.backup)) return { result: 'GAP', reason: 'same-as-primary' };
+    if (answer.assessment === 'no') return { result: 'GAP', reason: 'self-reported-gap' };
+    if (answer.assessment !== 'yes' || !norm(answer.reason)) return { result: 'CHECK', reason: 'unconfirmed' };
+    return { result: 'BACKUP', reason: 'self-reported-backup' };
   }
-
-  function scorePlan(plan) {
-    return plan.map(scoreAnswer);
+  function scorePlan(plan) { return plan.map(scoreAnswer); }
+  function summary(plan) {
+    return scorePlan(plan).reduce(function (counts, score) { counts[score.result] += 1; return counts; }, { GAP: 0, CHECK: 0, BACKUP: 0 });
   }
-
-  function countBreaks(plan) {
-    return scorePlan(plan).filter(function (s) { return s.result === 'BREAKS'; }).length;
-  }
-
-  /* Same PRIMARY on 3 or more questions. Warning only; never changes scoring. */
-  function concentration(plan) {
-    var groups = {};
-    var order = [];
-    plan.forEach(function (answer) {
-      var key = norm(answer && answer.primary);
-      if (!key) return;
-      if (!groups[key]) {
-        groups[key] = { answer: String(answer.primary).trim(), n: 0 };
-        order.push(key);
-      }
-      groups[key].n += 1;
+  function cleanPlan(saved, questions) {
+    // Match stable flood-topic IDs only. Never reinterpret the old business answers.
+    return questions.map(function (q) {
+      var a = saved && saved[q.id] || {};
+      function text(v) { return typeof v === 'string' ? v.slice(0, 600) : ''; }
+      return { primary: text(a.primary), backup: text(a.backup), assessment: ['yes','no','unsure'].indexOf(a.assessment) >= 0 ? a.assessment : '', reason: text(a.reason) };
     });
-    return order
-      .map(function (key) { return groups[key]; })
-      .filter(function (group) { return group.n >= 3; });
   }
-
-  /* Game feedback, not a risk rating. */
-  function meterLabel(breaks) {
-    if (breaks <= 0) return { level: 'green', text: 'Holding strong' };
-    if (breaks <= 2) return { level: 'yellow', text: 'Vulnerabilities found' };
-    return { level: 'red', text: 'Critical weaknesses' };
+  function revise(answer, primary, backup) {
+    var changed = primary.trim() !== answer.primary || backup.trim() !== answer.backup;
+    return { primary: primary.trim(), backup: backup.trim(), assessment: changed ? '' : answer.assessment, reason: changed ? '' : answer.reason };
   }
-
-  return {
-    norm: norm,
-    scoreAnswer: scoreAnswer,
-    scorePlan: scorePlan,
-    countBreaks: countBreaks,
-    concentration: concentration,
-    meterLabel: meterLabel
-  };
+  return { norm: norm, scoreAnswer: scoreAnswer, scorePlan: scorePlan, summary: summary, cleanPlan: cleanPlan, revise: revise };
 })();
-
 if (typeof module !== 'undefined' && module.exports) module.exports = DryRun;

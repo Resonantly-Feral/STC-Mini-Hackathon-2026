@@ -1,614 +1,260 @@
-/* Dry Run app: screens, state, and storage. Scoring lives in scoring.js. */
+/* Browser-only flood-plan rehearsal. No automated safety assessment. */
 (function () {
   'use strict';
-
-  var QUESTIONS = DRY_RUN_QUESTIONS;
-  var STORE_KEY = 'dryrun.v1';
-  var app = document.getElementById('app');
-  var water = document.getElementById('water');
-
-  /* state.plan: 5 answers. state.lastBreaks: breaks in the last finished run (or null).
-     state.lastBroken: ids of questions that broke in the last finished run. */
-  var state = load() || { plan: emptyPlan(), lastBreaks: null, lastBroken: [] };
-  var run = null; // the drill in progress
-
-  function emptyPlan() {
-    return QUESTIONS.map(function () { return { primary: '', backup: '' }; });
+  var Q = DRY_RUN_QUESTIONS, app = document.getElementById('app');
+  var KEY = 'dryrun.flood.v2', state, plan, run, storageFailed = false;
+  try { state = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { state = {}; }
+  plan = DryRun.cleanPlan(state.answers, Q);
+  var last = state.last && Array.isArray(state.last.outcomes) && state.last.outcomes.length === Q.length &&
+    state.last.outcomes.every(function (s) { return ['GAP','CHECK','BACKUP'].indexOf(s) >= 0; }) ? state.last : null;
+  var demoMode = false;
+  var savedPlan = JSON.parse(JSON.stringify(plan)), savedLast = last;
+  function freshPlan() { return DryRun.cleanPlan(null,Q); }
+  function beginPersonal() { demoMode=false; plan=freshPlan(); last=null; planScreen(); }
+  function continuePersonal() { demoMode=false; plan=JSON.parse(JSON.stringify(savedPlan)); last=savedLast; planScreen(); }
+  function beginSample(openPlan) {
+    demoMode=true; last=null; plan=DRY_RUN_EXAMPLE.map(function(a){return {primary:a.primary,backup:a.backup,assessment:'',reason:''};});
+    if(openPlan) planScreen(); else startDrill();
   }
-
-  function load() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(STORE_KEY));
-      if (saved && Array.isArray(saved.plan) && saved.plan.length === QUESTIONS.length) return saved;
-    } catch (e) { /* storage unavailable or corrupt: start fresh */ }
-    return null;
-  }
-
-  function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* keep going in memory */ }
-  }
-
-  /* Small DOM helper. Text always goes in as text, never as HTML. */
+  var labels = { GAP: 'Gap found', CHECK: 'Needs checking', BACKUP: 'Backup named' };
   function el(tag, attrs, children) {
-    var node = document.createElement(tag);
-    Object.keys(attrs || {}).forEach(function (key) {
-      if (key === 'class') node.className = attrs[key];
-      else if (key === 'text') node.textContent = attrs[key];
-      else if (key.indexOf('on') === 0) node.addEventListener(key.slice(2), attrs[key]);
-      else node.setAttribute(key, attrs[key]);
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k];
+      else if (k === 'class') n.className = attrs[k];
+      else if (k.slice(0,2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+      else n.setAttribute(k, attrs[k]);
     });
-    (children || []).forEach(function (child) { if (child) node.appendChild(child); });
-    return node;
+    (children || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
   }
-
-  function show(nodes) {
+  function save() {
+    if (demoMode) return;
+    savedPlan=JSON.parse(JSON.stringify(plan)); savedLast=last;
+    var answers = {};
+    Q.forEach(function (q,i) { answers[q.id] = plan[i]; });
+    try { localStorage.setItem(KEY, JSON.stringify({ answers: answers, last: last })); }
+    catch (e) { storageFailed = true; }
+  }
+  function button(text, fn, cls, id) { return el('button', { type:'button', text:text, class:cls || 'btn-primary', id:id || '', onclick:fn }); }
+  function show(nodes, screen) {
+    setWater(0);
+    app.className = screen === 'plan' ? 'plan-screen' : screen === 'results' ? 'results-screen' : screen === 'drill' ? 'drill-screen' : '';
     app.textContent = '';
-    nodes.forEach(function (node) { if (node) app.appendChild(node); });
-    window.scrollTo(0, 0);
+    nodes.forEach(function (n) { if (n) app.appendChild(n); });
+    if (storageFailed) app.appendChild(el('p',{class:'error',role:'status',text:'This browser could not save your plan. Keep this tab open and print or copy your answers before leaving.'}));
+    window.scrollTo(0,0);
+    var heading = app.querySelector('h1');
+    if (heading) { heading.tabIndex = -1; heading.focus({preventScroll:true}); }
   }
-
-  function setWater(breaks) {
-    water.style.height = (breaks / QUESTIONS.length * 100) + 'vh';
-    water.classList.toggle('empty', breaks === 0);
+  function setWater(gaps) {
+    var water=document.getElementById('water');
+    water.style.height=(Math.max(0,Math.min(Q.length,gaps))*9)+'vh';
+    water.classList.toggle('empty',gaps===0);
   }
-
-  function meterChip(breaks) {
-    var label = DryRun.meterLabel(breaks);
-    return el('div', { class: 'meter ' + label.level, role: 'status' }, [
-      el('span', { class: 'dot' }),
-      el('span', { text: label.text })
+  function status(text) {
+    return el('div',{class:'statusbar'},[
+      button('DRY RUN',home,'brand','home'), el('span',{class:'status-label',text:(demoMode ? 'Sample · ' : '')+text})
     ]);
   }
-
-  /* Five cells, one lit per break. Same numbers as the water behind the page. */
-  function meterBar(breaks) {
-    var cells = QUESTIONS.map(function (q, i) {
-      return el('span', { class: 'cell' + (i < breaks ? ' on' : '') });
-    });
-    return el('div', {
-      class: 'cells', role: 'img',
-      'aria-label': 'Water level: ' + breaks + ' of ' + QUESTIONS.length + ' steps'
-    }, cells);
-  }
-
-  function statusBar(label, onHome) {
-    var brand = onHome
-      ? el('button', { class: 'brand', id: 'home', type: 'button', text: 'DRY RUN', 'aria-label': 'Dry Run home', onclick: onHome })
-      : el('span', { class: 'brand', text: 'DRY RUN' });
-    return el('div', { class: 'statusbar' }, [
-      brand,
-      el('span', { class: 'status-label' }, [el('span', { class: 'blink', 'aria-hidden': 'true' }), el('span', { text: label })])
+  function note() { return el('p',{class:'small muted',text:'A short rehearsal, not a complete emergency plan or a safety rating. Follow current instructions from local authorities. No live warnings or shelter status are shown.'}); }
+  function sources() {
+    return el('section',{class:'panel sources'},[
+      el('h2',{text:'Official information and preparation guidance'}),
+      el('p',{class:'small muted',text:'These external links need internet. Check current official instructions; a saved destination may not be safe or open.'}),
+      el('ul',{class:'list'}, DRY_RUN_SOURCES.map(function (s) { return el('li',{},[
+        el('a',{href:s.url,target:'_blank',rel:'noopener noreferrer',text:s.name}),
+        el('span',{class:'src-by',text:s.by}), el('span',{text:s.what})
+      ]); })),
+      el('p',{class:'small',text:'In an emergency, call 999.'})
     ]);
   }
-
-  function shuffle(list) {
-    var a = list.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-
-  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
-
-  /* ---------- Screen 0: home ---------- */
-
-  function homeScreen() {
-    setWater(0);
-    var total = QUESTIONS.length;
-    var hasRun = state.lastBreaks !== null;
-    var held = hasRun ? total - state.lastBreaks : 0;
-    var level = hasRun ? DryRun.meterLabel(state.lastBreaks).level : 'idle';
-
-    var town = DryRunTown.build({
-      states: QUESTIONS.map(function (q) {
-        return !hasRun ? 'idle' : state.lastBroken.indexOf(q.id) !== -1 ? 'breaks' : 'holds';
-      }),
-      active: -1,
-      label: hasRun
-        ? 'Your town after the last drill: ' + held + ' of ' + total + ' buildings held.'
-        : 'Your town. Five buildings, one for each part of your plan. Not tested yet.'
-    });
-    town.el.className += ' town-hero ' + level;
-
-    function demo() {
-      state = { plan: DRY_RUN_EXAMPLE.map(function (a) { return { primary: a.primary, backup: a.backup }; }), lastBreaks: null, lastBroken: [] };
-      save();
-      startDrill();
-    }
-
-    var steps = [
-      ['01', 'Write your plan', 'Five questions. A primary and a backup for each.'],
-      ['02', 'Break it', 'Five failure events hit your own answers. Bet on each one.'],
-      ['03', 'Patch and replay', 'Fix what broke, run it again, compare before and after.']
-    ].map(function (s) {
-      return el('li', {}, [
-        el('span', { class: 'step-no', text: s[0] }),
-        el('div', {}, [el('strong', { text: s[1] }), el('span', { class: 'muted', text: s[2] })])
-      ]);
-    });
-
+  function home() {
+    var town = DryRunTown.build({states:Q.map(function(){return 'idle';}),active:-1,water:0,label:'Illustration of a neighbourhood. Not a flood forecast or readiness assessment.'});
+    town.el.className += ' town-hero';
     show([
-      el('section', { class: 'hero' }, [
-        el('p', { class: 'eyebrow', text: 'Disaster plan drill' }),
-        el('h1', { class: 'hero-title', text: 'DRY RUN' }),
-        el('p', { class: 'tagline', text: 'Find the failure before the disaster does.' }),
+      el('section',{class:'hero'},[
+        el('p',{class:'eyebrow',text:'Flood preparedness rehearsal'}),
+        el('h1',{class:'hero-title',text:'DRY RUN'}),
+        el('p',{class:'tagline',text:'Find gaps in your flood plan before you need it.'}),
         town.el,
-        hasRun
-          ? el('div', { class: 'hero-meter' }, [
-            meterChip(state.lastBreaks),
-            el('span', { class: 'small muted', text: held + ' of ' + total + ' held in your last drill' })
-          ])
-          : el('p', { class: 'hero-meter muted small', text: 'Five buildings, one for each part of your plan. Not tested yet.' }),
-        el('button', {
-          class: 'btn-primary btn-hero', id: 'begin',
-          text: hasRun ? 'CONTINUE SIMULATION' : 'START SIMULATION', onclick: function () { planScreen(); }
-        }),
-        el('button', { class: 'btn-ghost btn-demo', id: 'demo', text: 'Try demo plan', onclick: demo }),
-        el('p', { class: 'small muted', text: 'The demo plan is a made-up kedai with three weak spots. It replaces any plan saved here.' })
+        el('p',{class:'lead',text:'Warnings. Evacuation. People. Communication. Essentials.'}),
+        button('Write your flood plan',beginPersonal,'btn-primary','begin'),
+        savedPlan.some(function(a){return a.primary || a.backup;})
+          ? button('Continue saved plan',continuePersonal,'btn-ghost btn-demo','continue') : null,
+        button('Try a sample drill',function(){beginSample(false);},'btn-ghost btn-demo','demo'),
+        el('p',{class:'small muted',text:'Start blank, continue your saved plan, or explore a separate sample with example reflections. The sample never overwrites your plan.'})
       ]),
-      el('ol', { class: 'steps' }, steps),
-      el('p', { class: 'small muted center', text: 'A drill for a kedai, a household, or a committee. ' +
-        'The meter is game feedback, not a risk rating. Your plan stays on this device.' })
+      el('ol',{class:'steps'},[
+        ['01','Plan','Five practical topics. Name your first choice and a fallback.'],
+        ['02','Rehearse','Face a disruption. Explain whether your backup would still work.'],
+        ['03','Patch and replay','Record gaps, check assumptions and rehearse again.']
+      ].map(function(s){return el('li',{},[el('span',{class:'step-no',text:s[0]}),el('div',{},[el('strong',{text:s[1]}),el('span',{class:'muted',text:s[2]})])]);})),
+      note(), el('p',{class:'small muted',text:'Your answers stay in this browser. Earlier business-drill answers are not reused for these flood questions.'})
     ]);
   }
-
-  /* ---------- Screen 1: the plan ---------- */
-
-  /* focusIndex (optional): jump straight to that question's backup field. */
   function planScreen(focusIndex) {
-    setWater(0);
-    var isReplay = state.lastBreaks !== null;
-    var before = state.plan.map(function (a) { return a.primary + '\n' + a.backup; });
-    var error = el('p', { class: 'error', role: 'alert' });
-    var inputs = [];
-    var total = QUESTIONS.length;
-
-    var pips = QUESTIONS.map(function () { return el('span', { class: 'pip' }); });
-    var countText = el('span', { class: 'progress-count' });
-    var progress = el('div', { class: 'progress', role: 'status' }, [
-      el('div', { class: 'progress-pips', 'aria-hidden': 'true' }, pips),
-      countText
-    ]);
-
-    var blocks = QUESTIONS.map(function (q, i) {
-      var broke = isReplay && state.lastBroken.indexOf(q.id) !== -1;
-      var primary = el('input', { type: 'text', id: q.id + '-primary', placeholder: q.primaryHint, maxlength: '60', autocomplete: 'off' });
-      var backup = el('input', { type: 'text', id: q.id + '-backup', placeholder: q.backupHint, maxlength: '60', autocomplete: 'off' });
-      primary.value = state.plan[i].primary;
-      backup.value = state.plan[i].backup;
-      var chip = el('span', { class: 'chip' });
-      var block = el('section', { class: 'panel q-card' + (broke ? ' broke' : '') }, [
-        el('div', { class: 'q-head' }, [
-          el('span', { class: 'q-no', 'aria-hidden': 'true', text: '0' + (i + 1) }),
-          el('span', { class: 'q-emoji', 'aria-hidden': 'true', text: q.emoji }),
-          el('span', { class: 'q-text', text: q.question })
-        ]),
-        el('div', { class: 'q-status' }, [
-          chip,
-          broke ? el('span', { class: 'badge', text: 'BROKE' }) : null
-        ]),
-        el('div', { class: 'field primary' }, [
-          el('label', { for: q.id + '-primary', text: 'Primary' }),
-          primary
-        ]),
-        el('div', { class: 'field backup' }, [
-          el('label', { for: q.id + '-backup', text: 'Backup (optional)' }),
-          backup
-        ])
-      ]);
-      inputs.push({ primary: primary, backup: backup, chip: chip, block: block });
-      primary.addEventListener('input', refresh);
-      backup.addEventListener('input', refresh);
-      return block;
-    });
-
-    /* Shows what is filled in. It does not score: that is the drill's job. */
+    var pairs = [], error = el('p',{class:'error',role:'alert'}), count = el('div',{class:'progress',role:'status'});
+    function read() {
+      var before=JSON.stringify(plan);
+      pairs.forEach(function(p,i){plan[i] = DryRun.revise(plan[i],p.primary.value,p.backup.value);});
+      if(JSON.stringify(plan)!==before) save();
+    }
     function refresh() {
-      var primaries = 0;
-      var backups = 0;
-      inputs.forEach(function (pair, i) {
-        var hasPrimary = !!pair.primary.value.trim();
-        var hasBackup = !!pair.backup.value.trim();
-        if (hasPrimary) primaries += 1;
-        if (hasBackup) backups += 1;
-        var edited = isReplay && (pair.primary.value.trim() + '\n' + pair.backup.value.trim()) !== before[i];
-        pair.chip.textContent = edited ? 'Edited, run the drill to retest'
-          : !hasPrimary ? 'To do' : hasBackup ? 'Backup named' : 'Primary set';
-        pair.chip.className = 'chip' + (edited ? ' edit' : !hasPrimary ? '' : hasBackup ? ' two' : ' one');
-        pair.block.classList.toggle('edited', edited);
-        pair.block.classList.toggle('has-primary', hasPrimary);
-        pair.block.classList.toggle('has-backup', hasBackup);
-        pips[i].className = 'pip' + (edited ? ' now' : !hasPrimary ? '' : hasBackup ? ' two' : ' one');
-      });
-      countText.textContent = primaries + ' of ' + total + ' primaries set · ' +
-        backups + ' of ' + total + ' backups named';
+      count.textContent = pairs.filter(function(p){return p.primary.value.trim();}).length + ' of 5 first choices entered · ' +
+        pairs.filter(function(p){return p.backup.value.trim();}).length + ' of 5 backups named';
     }
-
-    function readForm() {
-      state.plan = inputs.map(function (pair) {
-        return { primary: pair.primary.value.trim(), backup: pair.backup.value.trim() };
-      });
-      save();
-    }
-
-    function start() {
-      readForm();
-      var missing = state.plan.some(function (a) { return !a.primary; });
-      if (missing) {
-        error.textContent = 'Fill in the primary for all five before the drill.';
-        return;
-      }
-      startDrill();
-    }
-
-    function fillExample() {
-      DRY_RUN_EXAMPLE.forEach(function (answer, i) {
-        inputs[i].primary.value = answer.primary;
-        inputs[i].backup.value = answer.backup;
-      });
-      error.textContent = '';
-      refresh();
-    }
-
-    function startOver() {
-      state = { plan: emptyPlan(), lastBreaks: null, lastBroken: [] };
-      save();
-      planScreen();
-    }
-
+    var cards = Q.map(function(q,i){
+      var primary = el('textarea',{id:q.id+'-primary',rows:'3',maxlength:'600',placeholder:q.primaryHint});
+      var backup = el('textarea',{id:q.id+'-backup',rows:'3',maxlength:'600',placeholder:q.backupHint});
+      primary.value = plan[i].primary; backup.value = plan[i].backup;
+      [primary,backup].forEach(function(n){n.addEventListener('input',function(){read();refresh();});});
+      pairs.push({primary:primary,backup:backup});
+      return el('section',{class:'panel q-card'},[
+        el('div',{class:'q-head'},[el('span',{class:'q-no',text:'0'+(i+1)}),el('span',{'aria-hidden':'true',class:'q-emoji',text:q.emoji}),el('span',{class:'q-text',text:q.question})]),
+        el('p',{class:'small muted question-help',text:q.check}),
+        el('div',{class:'field primary'},[el('label',{for:q.id+'-primary',text:'First choice'}),primary]),
+        el('div',{class:'field backup'},[el('label',{for:q.id+'-backup',text:'Backup (optional)'}),backup])
+      ]);
+    });
     refresh();
     show([
-      statusBar(isReplay ? 'Patch your plan' : 'Preparedness checklist', function () { readForm(); homeScreen(); }),
-      el('h1', { text: isReplay ? 'Patch your plan' : 'Your plan' }),
-      isReplay
-        ? el('p', { class: 'lead', text: 'Patch your plan. Add or change a backup where it broke, then run the drill again.' })
-        : el('p', { class: 'lead', text: 'Write down your plan. Then we break things, one card at a time, and see what holds.' }),
-      progress
-    ].concat(blocks).concat([
-      error,
-      el('button', { class: 'btn-primary', id: 'start', text: isReplay ? 'Run the drill again' : 'Run the drill', onclick: start }),
-      el('div', { class: 'row', style: 'margin-top:12px' }, [
-        el('button', { class: 'btn-ghost', id: 'example', text: 'Fill example', onclick: fillExample }),
-        isReplay ? el('button', { class: 'btn-ghost', id: 'reset', text: 'Start over', onclick: startOver }) : null
+      status('Flood plan'),el('h1',{text:last ? 'Patch your flood plan' : 'Your flood plan'}),
+      el('p',{class:'lead',text:'Be specific about people, places and arrangements. If you do not have a plan for a topic, write “not planned yet” so you can explore the gap.'}),
+      el('p',{class:'small muted',text:demoMode ? 'Sample mode: fictional answers. Changes here are for practice and are not saved to your personal plan.' : 'Your plan starts blank. Edits save on this device; use Continue saved plan to return to them.'}),
+      note(),count,el('div',{class:'plan-grid'},cards),error,
+      el('div',{class:'plan-actions'},[
+      button('Start the rehearsal',function(){
+        read(); var missing = pairs.findIndex(function(p){return !p.primary.value.trim();});
+        if(missing >= 0) {error.textContent='Enter a first choice for each topic, or write “not planned yet”.';pairs[missing].primary.focus();return;}
+        startDrill();
+      },'btn-primary','start'),
+        button('Fill sample answers',function(){beginSample(true);},'btn-ghost','example'),
+        button('Back to home',function(){read();home();},'btn-ghost')
       ])
-    ]));
-
-    if (typeof focusIndex === 'number' && inputs[focusIndex]) {
-      inputs[focusIndex].block.scrollIntoView({ block: 'center' });
-      inputs[focusIndex].backup.focus({ preventScroll: true });
-    }
+    ],'plan');
+    if(typeof focusIndex === 'number' && pairs[focusIndex]) pairs[focusIndex].backup.focus();
   }
-
-  /* ---------- Screen 2: the drill ---------- */
-
   function startDrill() {
-    var scores = DryRun.scorePlan(state.plan);
-    run = {
-      order: shuffle(QUESTIONS.map(function (q, i) { return i; })),
-      scores: scores,
-      step: 0,
-      breaks: 0,
-      correctBets: 0,
-      previousBreaks: state.lastBreaks,
-      previousBroken: state.lastBroken.slice()
-    };
-    setWater(0);
-    cardScreen();
-  }
-
-  function whyText(index) {
-    var answer = state.plan[index];
-    var reason = run.scores[index].reason;
-    if (reason === 'no-backup') return 'No backup named. Nothing takes over.';
-    if (reason === 'same-as-primary') return 'The backup is the same as the primary.';
-    return answer.backup + ' takes over.';
-  }
-
-  /* Town states for this run: buildings whose card has been revealed show the result. */
-  function townStates(revealed) {
-    var states = QUESTIONS.map(function () { return 'idle'; });
-    run.order.slice(0, revealed).forEach(function (index) {
-      states[index] = run.scores[index].result === 'BREAKS' ? 'breaks' : 'holds';
+    run = {previous:last,outcomes:[]};
+    plan.forEach(function(a,i){
+      a.assessment=demoMode ? DRY_RUN_REFLECTIONS[i].assessment : '';
+      a.reason=demoMode ? DRY_RUN_REFLECTIONS[i].reason : '';
     });
-    return states;
+    save(); drill();
   }
-
-  /* Primary knocked out on the left; on the right, what takes over (or nothing). */
-  function relay(index) {
-    var answer = state.plan[index];
-    var reason = run.scores[index].reason;
-    var holds = reason === 'distinct-backup';
-    var backupText = holds ? answer.backup : reason === 'no-backup' ? 'None named' : 'Same as primary';
-    return el('div', { class: 'relay ' + (holds ? 'holds' : 'breaks') }, [
-      el('div', { class: 'node down' }, [
-        el('span', { class: 'node-cap', text: 'Primary' }),
-        el('span', { class: 'node-name', text: answer.primary })
-      ]),
-      el('div', { class: 'link', 'aria-hidden': 'true' }),
-      el('div', { class: 'node ' + (holds ? 'up' : 'none') }, [
-        el('span', { class: 'node-cap', text: 'Backup' }),
-        el('span', { class: 'node-name', text: backupText })
-      ])
-    ]);
+  function explain(answer, score) {
+    if(score.reason==='no-primary') return 'No first choice has been recorded.';
+    if(score.reason==='no-backup') return 'No fallback is recorded. Identify one and check whether it can work.';
+    if(score.reason==='same-as-primary') return 'The backup repeats the first choice. Identify an alternative or explain and revise the arrangement.';
+    if(score.reason==='self-reported-gap') return 'You said this backup would not work in the scenario.';
+    if(score.result==='CHECK') return 'A different name or method is not enough. Check availability, access and shared dependencies.';
+    return 'You named a backup and explained why you think it could work. This is your assessment, not independent verification.';
   }
-
-  function cardScreen() {
-    var index = run.order[run.step];
-    var q = QUESTIONS[index];
-    var score = run.scores[index];
-    var holds = score.result === 'HOLDS';
-    var cardText = q.card.replace('{primary}', function () { return state.plan[index].primary; });
-
-    var call = el('div', { class: 'call' });
-    var front = el('div', { class: 'face front' }, [
-      el('div', { class: 'alert-strip' }, [
-        el('span', { class: 'blink', 'aria-hidden': 'true' }),
-        el('span', { text: 'Incoming event' })
-      ]),
-      el('div', { class: 'card-emoji', 'aria-hidden': 'true', text: q.emoji }),
-      el('div', { class: 'card-topic', text: q.topic }),
-      el('p', { class: 'card-text', text: cardText })
-    ]);
-    var back = el('div', { class: 'face back ' + (holds ? 'holds' : 'breaks'), 'aria-hidden': 'true' }, [
-      el('div', { class: 'alert-strip' }, [
-        el('span', { text: holds ? 'Backup activated' : 'Plan failure' })
-      ]),
-      el('div', { class: 'card-emoji', 'aria-hidden': 'true', text: holds ? '🛟' : '💥' }),
-      el('div', { class: 'verdict', text: score.result }),
-      relay(index),
-      el('div', { class: 'why', text: whyText(index) }),
-      call
-    ]);
-    var card = el('div', { class: 'card', id: 'card' }, [el('div', { class: 'card-inner' }, [front, back])]);
-    var meterSlot = el('div', {}, [meterChip(run.breaks)]);
-    var town = DryRunTown.build({ states: townStates(run.step), active: index, water: run.breaks, storm: true });
-    town.el.className += ' town-drill';
-    var actions = el('div', { class: 'actions', 'aria-live': 'polite' });
-
-    function bet(guess) {
-      var right = guess === score.result;
-      if (right) run.correctBets += 1;
-      if (!holds) run.breaks += 1;
-      call.textContent = right ? 'You called it.' : 'You did not see that coming.';
-      card.classList.add('flipped');
-      card.classList.add(holds ? 'is-holds' : 'is-breaks');
-      front.setAttribute('aria-hidden', 'true');
-      back.removeAttribute('aria-hidden');
-      setWater(run.breaks);
-      meterSlot.textContent = '';
-      meterSlot.appendChild(meterChip(run.breaks));
-      town.set({ states: townStates(run.step + 1), active: -1, water: run.breaks, storm: true });
-
-      var last = run.step === run.order.length - 1;
-      actions.textContent = '';
-      var next = el('button', {
-        class: 'btn-primary', id: 'next',
-        text: last ? 'See results' : 'Next card',
-        onclick: function () {
-          run.step += 1;
-          if (last) finishDrill(); else cardScreen();
-        }
-      });
-      actions.appendChild(next);
-      next.focus();
+  function drill() {
+    var error=el('p',{class:'error',role:'alert'}), fields=[];
+    var count=el('p',{class:'progress',role:'status'});
+    var waterNote=el('p',{class:'small muted water-note',role:'status'});
+    function refresh() {
+      var complete=fields.filter(function(f){return f.answer.assessment && f.why.value.trim();}).length;
+      count.textContent=complete+' of 5 reflections ready'+(demoMode ? ' · prefilled examples, editable' : '');
+      var gaps=fields.filter(function(f){return f.answer.assessment && DryRun.scoreAnswer(f.answer).result==='GAP';}).length;
+      setWater(gaps);
+      waterNote.textContent='Rehearsal water: '+gaps+' of 5 topics with gaps so far. Illustration only—not flood depth or a safety score.';
     }
-
-    actions.appendChild(el('p', { class: 'muted center', text: 'Place your bet. Does your plan survive this?' }));
-    actions.appendChild(el('div', { class: 'row' }, [
-      el('button', { class: 'btn-holds', id: 'bet-holds', 'aria-label': 'My plan HOLDS', onclick: function () { bet('HOLDS'); } }, [
-        el('span', { class: 'bet-main', text: 'HOLDS' }),
-        el('span', { class: 'bet-sub', text: 'My plan survives' })
-      ]),
-      el('button', { class: 'btn-breaks', id: 'bet-breaks', 'aria-label': 'My plan BREAKS', onclick: function () { bet('BREAKS'); } }, [
-        el('span', { class: 'bet-main', text: 'BREAKS' }),
-        el('span', { class: 'bet-sub', text: 'My plan fails' })
-      ])
-    ]));
-
-    var dots = run.order.map(function (o, i) {
-      return el('span', { class: 'pip' + (i < run.step ? ' two' : i === run.step ? ' now' : '') });
-    });
-
-    show([
-      statusBar('Simulation running'),
-      el('div', { class: 'topbar' }, [
-        el('div', { class: 'event-count' }, [
-          el('strong', { text: 'Card ' + (run.step + 1) + ' of ' + run.order.length }),
-          el('div', { class: 'progress-pips', 'aria-hidden': 'true' }, dots)
+    var cards=Q.map(function(q,i){
+      var answer=plan[i];
+      var why=el('textarea',{id:q.id+'-reflection',rows:'2',maxlength:'600',placeholder:'Why? What needs checking?'});
+      why.value=answer.reason;
+      why.addEventListener('input',function(){answer.reason=why.value;save();refresh();});
+      var radios=[];
+      var choices=el('fieldset',{class:'reflection-choices'},[
+        el('legend',{text:'Would your backup still work?'})
+      ].concat([['yes','I think it could'],['no','No, there is a gap'],['unsure','I am not sure']].map(function(item){
+        var radio=el('input',{type:'radio',name:'assessment-'+q.id,value:item[0],onchange:function(){answer.assessment=item[0];save();refresh();}});
+        radio.checked=answer.assessment===item[0]; radios.push(radio);
+        return el('label',{class:'choice'},[radio,el('span',{text:item[1]})]);
+      })));
+      fields.push({answer:answer,why:why,radios:radios});
+      return el('section',{class:'panel rehearsal-card','aria-label':q.topic+' scenario'},[
+        el('h2',{text:q.emoji+' '+q.topic}),
+        el('div',{class:'scenario-summary'},[
+          el('h3',{text:q.card})
         ]),
-        meterSlot
-      ]),
-      town.el,
-      card,
-      actions
-    ]);
+        el('details',{class:'scenario-guidance plan-detail'},[
+          el('summary',{text:'Your plan & backup'}),
+          el('p',{class:'small muted',text:'First choice: '+answer.primary}),
+          el('p',{class:'small',text:'Backup: '+(answer.backup||'None recorded')})
+        ]),
+        el('details',{class:'scenario-guidance'},[el('summary',{text:'What to consider'}),el('p',{class:'small',text:q.prompt}),el('p',{class:'small muted',text:q.check})]),
+        choices,el('label',{for:q.id+'-reflection',text:demoMode ? 'Example reflection' : 'Your reflection'}),why
+      ]);
+    });
+    refresh();
+    show([
+      status('All five scenarios'),el('h1',{text:demoMode ? 'Explore the sample rehearsal' : 'Rehearse your flood plan'}),
+      el('p',{class:'lead',text:'Imagine each disruption. Would your backup work? Choose, explain, then review.'}),
+      el('p',{class:'small muted',text:demoMode ? 'Fictional sample · edit the example reflections to explore. Your personal plan stays separate.' : 'Your plan is under each card. These are your judgments; backups are not independently verified.'}),
+      count,el('div',{class:'rehearsal-grid'},cards),error,
+      el('div',{class:'plan-actions'},[
+        button('Review all five reflections',function(){
+          var missing=fields.findIndex(function(f){return !f.answer.assessment || !f.why.value.trim();});
+          if(missing>=0){error.textContent='Choose a response and add an explanation for '+Q[missing].topic.toLowerCase()+'.';
+            if(!fields[missing].answer.assessment) fields[missing].radios[0].focus();else fields[missing].why.focus();return;}
+          plan.forEach(function(a,i){a.reason=fields[i].why.value.trim();});
+          run.outcomes=DryRun.scorePlan(plan).map(function(s){return s.result;});
+          last={outcomes:run.outcomes.slice(),date:new Date().toISOString()};save();results();
+        },'btn-primary','review'),
+        button('Edit plan',function(){planScreen();},'btn-ghost','edit-plan')
+      ]), waterNote, note()
+    ],'drill');
+    refresh();
   }
-
-
-  /* ---------- Paper copy ---------- */
-
-  function today() {
-    var d = new Date();
-    function two(n) { return (n < 10 ? '0' : '') + n; }
-    return two(d.getDate()) + '/' + two(d.getMonth() + 1) + '/' + d.getFullYear();
+  function results() {
+    var scores=DryRun.scorePlan(plan), counts=DryRun.summary(plan);
+    var panels=Q.map(function(q,i){var score=scores[i];return el('section',{class:'panel outcome '+score.result.toLowerCase()},[
+      el('h2',{text:q.emoji+' '+q.topic}),el('span',{class:'chip',text:labels[score.result]}),
+      el('p',{text:explain(plan[i],score)}),
+      el('p',{class:'small',text:'Backup: '+(plan[i].backup||'None recorded')}),
+      el('p',{class:'small muted',text:'Your note: '+plan[i].reason}),
+      button('Patch '+q.topic.toLowerCase(),function(){planScreen(i);},'btn-ghost')
+    ]);});
+    var compare=run.previous ? el('section',{class:'panel'},[
+      el('h2',{text:'Before and after'}),
+      el('p',{class:'small muted',text:'Changes in your recorded answers and judgments—not a measured improvement in safety.'}),
+      el('ul',{class:'list'},Q.map(function(q,i){return el('li',{text:q.topic+': '+labels[run.previous.outcomes[i]]+' → '+labels[scores[i].result]});}))
+    ]) : null;
+    show([
+      status('Rehearsal review'),el('h1',{text:demoMode ? 'Sample next steps' : 'Your next steps'}),
+      el('p',{class:'lead',text:'Check the assumptions. Agree arrangements with the people involved. Then rehearse again.'}),
+      el('div',{class:'review-counts'},Object.keys(labels).map(function(key){return el('section',{class:'panel outcome '+key.toLowerCase()},[
+        el('div',{class:'tile-num',text:String(counts[key])}),el('p',{text:labels[key]})
+      ]);})),
+      el('p',{class:'small muted water-note',text:'Rehearsal water: '+counts.GAP+' of 5 topics with gaps. Illustration only—not flood depth or a safety score.'}),note(),compare
+    ].concat([el('div',{class:'results-grid'},panels)]).concat([
+      button('Patch and replay',function(){planScreen();},'btn-primary','patch'),
+      button('Print my plan',function(){window.print();},'btn-ghost btn-demo','print'),
+      sources(),printSheet()
+    ]), 'results');
+    setWater(counts.GAP);
   }
-
-  /* One page for the fridge or the shop wall. Only visible when printing. */
   function printSheet() {
-    var rows = QUESTIONS.map(function (q, i) {
-      var answer = state.plan[i];
-      var holds = DryRun.scoreAnswer(answer).result === 'HOLDS';
-      return el('tr', {}, [
-        el('th', { scope: 'row', text: q.question }),
-        el('td', { text: answer.primary }),
-        el('td', { class: holds ? '' : 'gap', text: holds ? answer.backup : 'No backup yet: ____________________' })
-      ]);
-    });
-    return el('section', { id: 'sheet', 'aria-hidden': 'true' }, [
-      el('h1', { text: 'Our plan if disaster strikes' }),
-      el('p', { text: 'Tested with Dry Run on ' + today() + '. Keep this on paper, where everyone can find it.' }),
-      el('table', {}, [
-        el('thead', {}, [el('tr', {}, [
-          el('th', { scope: 'col', text: 'Question' }),
-          el('th', { scope: 'col', text: 'First choice' }),
-          el('th', { scope: 'col', text: 'If that fails' })
-        ])]),
-        el('tbody', {}, rows)
+    return el('section',{id:'sheet'},[
+      el('h1',{text:demoMode ? 'Sample flood rehearsal notes' : 'Our flood rehearsal notes'}),
+      el('p',{text:'Recorded '+new Date().toLocaleDateString()+'. A discussion aid, not a complete plan or safety certification.'}),
+      el('table',{},[
+        el('thead',{},[el('tr',{},['Topic','First choice','Backup and follow-up'].map(function(t){return el('th',{scope:'col',text:t});}))]),
+        el('tbody',{},Q.map(function(q,i){return el('tr',{},[
+          el('th',{scope:'row',text:q.topic}),el('td',{text:plan[i].primary}),
+          el('td',{text:(plan[i].backup||'Not yet named')+' — '+labels[DryRun.scoreAnswer(plan[i]).result]+'. '+plan[i].reason})
+        ]);}))
       ]),
-      el('p', { class: 'sheet-note', text: 'Fill any blank line by hand, then run the drill again.' }),
-      el('h2', { text: 'Official information (needs internet)' }),
-      el('ul', {}, DRY_RUN_SOURCES.map(function (src) {
-        return el('li', { text: src.name + ' (' + src.by + '): ' + src.url.replace('https://', '') });
-      })),
-      el('p', { text: 'In an emergency, call 999.' })
+      el('p',{text:'Follow current instructions from local authorities. Confirm safe routes, destination availability and support arrangements. Never enter floodwater to retrieve supplies.'}),
+      el('h2',{text:'Official information (internet required)'}),
+      el('ul',{},DRY_RUN_SOURCES.map(function(s){return el('li',{text:s.name+': '+s.url});})),
+      el('p',{text:'In an emergency, call 999.'})
     ]);
   }
-
-  /* Where to look for real warnings. Links only; nothing is fetched. */
-  function sourcesPanel() {
-    return el('section', { class: 'panel sources', id: 'sources' }, [
-      el('h2', { text: 'When it is real: official sources' }),
-      el('p', { text: 'Dry Run tests your plan. It does not show warnings, flood levels or which shelters are open. ' +
-        'For those, use the official sources below and follow instructions from local authorities.' }),
-      el('ul', { class: 'list' }, DRY_RUN_SOURCES.map(function (src) {
-        return el('li', {}, [
-          el('a', { href: src.url, target: '_blank', rel: 'noopener noreferrer', text: src.name }),
-          el('span', { class: 'src-by', text: src.by }),
-          el('span', { text: src.what })
-        ]);
-      })),
-      el('p', { class: 'small muted', text: 'These links open other websites and need an internet connection. ' +
-        'In an emergency, call 999.' })
-    ]);
-  }
-
-  /* ---------- Screen 3: results ---------- */
-
-  function finishDrill() {
-    state.lastBreaks = run.breaks;
-    state.lastBroken = QUESTIONS.filter(function (q, i) { return run.scores[i].result === 'BREAKS'; })
-      .map(function (q) { return q.id; });
-    save();
-    resultsScreen();
-  }
-
-  /* One town per run. It starts dry, then floods to its level so the two can be compared. */
-  function gauge(title, breaks, brokenIds, id, onPick) {
-    var states = QUESTIONS.map(function (q) { return brokenIds.indexOf(q.id) !== -1 ? 'breaks' : 'holds'; });
-    var town = DryRunTown.build({ states: states, active: -1, water: 0, onPick: onPick,
-      label: title + ': ' + breaks + ' of ' + QUESTIONS.length + ' buildings flooded.' });
-    setTimeout(function () { town.set({ states: states, active: -1, water: breaks }); }, 350);
-    return el('div', { class: 'gauge ' + DryRun.meterLabel(breaks).level, id: id }, [
-      el('div', { class: 'gauge-title', text: title }),
-      town.el,
-      el('div', { class: 'gauge-num', text: plural(breaks, 'break') }),
-      el('div', { class: 'gauge-label', text: DryRun.meterLabel(breaks).text })
-    ]);
-  }
-
-  function resultsScreen() {
-    var breaks = run.breaks;
-    var total = QUESTIONS.length;
-    setWater(breaks);
-
-    var warnings = DryRun.concentration(state.plan).map(function (group) {
-      return el('section', { class: 'panel warn', role: 'note' }, [
-        el('strong', { text: 'Concentration warning. ' }),
-        el('span', { text: 'You rely on ' + group.answer + ' for ' + group.n +
-          ' parts of your plan. Check whether your backups are truly independent.' })
-      ]);
-    });
-
-    var concentrated = DryRun.concentration(state.plan).map(function (g) { return DryRun.norm(g.answer); });
-    var rows = QUESTIONS.map(function (q, i) {
-      return { q: q, i: i, score: run.scores[i], heavy: concentrated.indexOf(DryRun.norm(state.plan[i].primary)) !== -1 };
-    });
-    var broken = rows.filter(function (r) { return r.score.result === 'BREAKS'; })
-      .sort(function (a, b) { return (b.heavy ? 1 : 0) - (a.heavy ? 1 : 0); });
-    var held = rows.filter(function (r) { return r.score.result === 'HOLDS'; });
-
-    function item(r) {
-      var tag = r.score.result === 'BREAKS' ? 'breaks' : 'holds';
-      return el('li', { class: tag }, [
-        el('span', { class: 'tag ' + tag, text: r.score.result }),
-        el('strong', { text: r.q.emoji + ' ' + r.q.topic + ': ' }),
-        el('span', { text: state.plan[r.i].primary + '. ' + whyText(r.i) })
-      ]);
-    }
-
-    var compare = null;
-    if (run.previousBreaks !== null) {
-      var diff = run.previousBreaks - breaks;
-      var verdict = diff > 0 ? plural(diff, 'break') + ' fixed since last run.'
-        : diff < 0 ? plural(-diff, 'more break') + ' than last run.'
-        : 'Same as last run.';
-      compare = el('section', { class: 'panel compare-panel ' + (diff > 0 ? 'better' : diff < 0 ? 'worse' : 'same'), id: 'compare' }, [
-        el('h2', { text: 'Before and after' }),
-        el('div', { class: 'compare' }, [
-          gauge('Last run', run.previousBreaks, run.previousBroken, 'gauge-before'),
-          el('div', { class: 'arrow', 'aria-hidden': 'true', text: '↓' }),
-          gauge('This run', breaks, state.lastBroken, 'gauge-after')
-        ]),
-        el('p', { class: 'compare-verdict', text: verdict })
-      ]);
-    }
-
-    var resultTown = DryRunTown.build({
-      states: townStates(run.order.length), active: -1, water: breaks,
-      onPick: function (index) { planScreen(index); }
-    });
-
-    var tiles = el('div', { class: 'tiles' }, [
-      el('section', { class: 'panel tile ' + (breaks === 0 ? 'good' : 'bad') }, [
-        el('div', { class: 'mono-cap', text: 'Failures' }),
-        el('div', { class: 'tile-num', 'aria-hidden': 'true', text: breaks + '/' + total }),
-        el('p', { class: 'tile-cap', id: 'score', text: breaks === 0 ? 'Nothing broke.' : plural(breaks, 'break') + ' out of ' + total + '.' })
-      ]),
-      el('section', { class: 'panel tile' }, [
-        el('div', { class: 'mono-cap', text: 'Your predictions' }),
-        el('div', { class: 'tile-num', 'aria-hidden': 'true', text: run.correctBets + '/' + total }),
-        el('p', { class: 'tile-cap', id: 'bets', text: 'You called ' + run.correctBets + ' of ' + total + ' correctly.' })
-      ]),
-      el('section', { class: 'panel tile wide' }, [
-        el('div', { class: 'tile-head' }, [el('div', { class: 'mono-cap', text: 'Resilience meter' }), meterChip(breaks)]),
-        resultTown.el,
-        meterBar(breaks),
-        el('p', { class: 'tile-cap', text: 'Water rose ' + plural(breaks, 'step') + ' out of ' + total + '.' +
-          (breaks ? ' Tap a flooded building to patch it.' : '') })
-      ])
-    ]);
-
-    show([
-      statusBar('Drill report'),
-      el('h1', { text: 'Results' }),
-      tiles,
-      compare
-    ].concat(warnings).concat([
-      broken.length ? el('section', { class: 'panel' }, [
-        el('h2', { text: 'Where it broke' }),
-        el('ul', { class: 'list', id: 'breaks' }, broken.map(item))
-      ]) : null,
-      held.length ? el('section', { class: 'panel' }, [
-        el('h2', { text: 'What held' }),
-        el('ul', { class: 'list', id: 'holds' }, held.map(item))
-      ]) : null,
-      el('button', { class: 'btn-primary', id: 'patch', text: 'Patch and replay', onclick: function () { planScreen(); } }),
-      el('button', { class: 'btn-ghost', id: 'print', style: 'width:100%;margin-top:12px', text: 'Print my plan',
-        onclick: function () { window.print(); } }),
-      sourcesPanel(),
-      el('p', { class: 'small muted', text: 'The meter labels are game feedback, not a risk rating. ' +
-        'A backup only counts here if you named one that is different from the primary. ' +
-        'Whether it would really work is for you to check.' }),
-      printSheet()
-    ]));
-  }
-
-  homeScreen();
-
-  /* Offline refresh. Only on a deployed https page, never on file://. */
-  if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ });
-  }
+  home();
+  if(location.protocol==='https:' && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
 })();
