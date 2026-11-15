@@ -38,6 +38,11 @@ To run the tests, double-click `tests.html`.
 Everything runs in the browser. The plan is saved in `localStorage` on your own
 device and the app makes no network calls.
 
+When the app is served over https, a service worker (`sw.js`) caches the static
+files so a refresh still works with no signal. It is not registered on
+`file://`. Bump `CACHE_VERSION` in `sw.js` on every deploy so the new files
+replace the old ones.
+
 ## Files
 
 | File | What it holds |
@@ -46,6 +51,7 @@ device and the app makes no network calls.
 | `scoring.js` | Scoring rule and concentration warning (pure functions) |
 | `cards.js` | The five questions and their failure cards |
 | `app.js` | Screens, state, storage |
+| `sw.js` | Service worker: caches the static files so a refresh works offline (https only) |
 | `tests.html`, `tests.js` | Scoring tests |
 | `.kiro/steering/` | Product and tech steering for Kiro |
 

@@ -362,4 +362,9 @@
   }
 
   planScreen();
+
+  /* Offline refresh. Only on a deployed https page, never on file://. */
+  if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* the app works without it */ });
+  }
 })();

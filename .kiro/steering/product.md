@@ -65,6 +65,8 @@ A colourful browser card game, not a form and not a dashboard.
 - No backend. No login. No live AI calls at runtime.
 - All data in localStorage.
 - No network calls after first load. All logic runs in the browser.
+- When deployed over https, a refresh works offline (service worker
+  caches the static files). No install prompt.
 - Scoring is a pure function in scoring.js, tested in tests.html.
 - Mobile-first, large text, plain language.
 
